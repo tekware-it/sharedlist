@@ -1,0 +1,137 @@
+import React, { useEffect, useState } from "react";
+import {
+  SafeAreaView,
+  ActivityIndicator,
+  View,
+  Text,
+  BackHandler,
+} from "react-native";
+import { Linking } from "react-native";
+
+import { MyListsScreen } from "./src/screens/MyListsScreen";
+import { CreateListScreen } from "./src/screens/CreateListScreen";
+import { ListScreen } from "./src/screens/ListScreen";
+import { parseSharedListUrl } from "./src/linking/sharedListLink";
+import { upsertStoredList } from "./src/storage/listsStore";
+import { startSyncWorker } from "./src/sync/syncWorker";
+
+type ScreenState =
+  | { type: "myLists" }
+  | { type: "create" }
+  | { type: "list"; listId: string; listKey: string };
+
+export default function App() {
+  const [ready, setReady] = useState(false);
+  const [screen, setScreen] = useState<ScreenState>({ type: "myLists" });
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function init() {
+      try {
+        const url = await Linking.getInitialURL();
+        if (url) {
+          const parsed = parseSharedListUrl(url);
+          if (parsed && mounted) {
+            setScreen({
+              type: "list",
+              listId: parsed.listId,
+              listKey: parsed.listKey,
+            });
+          }
+        }
+
+        const sub = Linking.addEventListener("url", ({ url }) => {
+          const parsed = parseSharedListUrl(url);
+          if (parsed) {
+            setScreen({
+              type: "list",
+              listId: parsed.listId,
+              listKey: parsed.listKey,
+            });
+          }
+        });
+
+        setReady(true);
+
+        return () => {
+          mounted = false;
+          // @ts-ignore
+          sub.remove?.();
+        };
+      } catch (e) {
+        console.error("Linking init error", e);
+        setReady(true);
+      }
+    }
+
+    init();
+  }, []);
+
+  useEffect(() => {
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (screen.type === "list") {
+          setScreen({ type: "myLists" });
+          return true;
+        }
+        if (screen.type === "create") {
+          setScreen({ type: "myLists" });
+          return true;
+        }
+        return false;
+      });
+
+      return () => sub.remove();
+    }, [screen.type]);
+
+  useEffect(() => {
+    startSyncWorker();
+  }, []);
+
+
+  if (!ready) {
+    return (
+      <SafeAreaView style={{ flex: 1 }}>
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <ActivityIndicator />
+          <Text>Avvio SharedList...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={{ flex: 1 }}>
+      {screen.type === "myLists" && (
+        <MyListsScreen
+          onSelectList={(listId, listKey) =>
+            setScreen({ type: "list", listId, listKey })
+          }
+          onCreateNewList={() => setScreen({ type: "create" })}
+        />
+      )}
+
+      {screen.type === "create" && (
+        <CreateListScreen
+          onListCreated={async ({ listId, listKey }) => {
+            setScreen({ type: "list", listId, listKey });
+          }}
+        />
+      )}
+
+      {screen.type === "list" && (
+        <ListScreen
+          listId={screen.listId}
+          listKeyParam={screen.listKey}
+        />
+      )}
+    </SafeAreaView>
+  );
+}
