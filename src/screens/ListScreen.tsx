@@ -355,7 +355,9 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   }, [listId]);
 
   async function handleShare() {
-    const url = buildSharedListUrl(listId, listKey);
+    const encodedKey = encodeURIComponent(listKey);
+    const deepLink = `sharedlist://l/${listId}?k=${encodedKey}`;
+
     Alert.alert(
       "Condividi lista",
       "Chiunque abbia questo link può vedere, modificare e cancellare la lista. Usalo solo con persone di cui ti fidi.",
@@ -367,7 +369,9 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           onPress: async () => {
             try {
               await Share.share({
-                message: `Lista condivisa: ${meta?.name ?? "Lista"}\n${url}`,
+                message: `Lista condivisa: ${
+                  meta?.name ?? "Lista"
+                }\n${deepLink}`,
               });
             } catch (e) {
               console.log("Share cancelled/failed", e);
@@ -377,6 +381,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       ]
     );
   }
+
 
   function showPendingItemToast() {
     const message =

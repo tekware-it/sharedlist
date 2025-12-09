@@ -11,14 +11,25 @@ import {
   Alert,
   ToastAndroid,
   Platform,
+  Modal,
+  TextInput,
 } from "react-native";
 
-import { loadStoredLists, removeStoredList } from "../storage/listsStore";
+import {
+  loadStoredLists,
+  saveStoredLists,
+  removeStoredList,
+} from "../storage/listsStore";
 import type { StoredList } from "../storage/types";
-import { apiFetchItems, apiDeleteList, apiHealthz } from "../api/client";
+import { apiFetchItems, apiDeleteList, apiHealthz, apiGetList } from "../api/client";
 import { getClientId } from "../storage/clientId";
 import { syncEvents } from "../events/syncEvents";
 import { loadSettings } from "../storage/settingsStore";
+
+import { decryptJson, type ListKey } from "../crypto/e2e";
+import type { ListMeta } from "../models/list";
+
+const PLACEHOLDER_NAME = "Lista importata";
 
 type ListWithStatus = StoredList & { hasRemoteChanges: boolean };
 
@@ -28,6 +39,66 @@ type Props = {
   onOpenSettings: () => void;
 };
 
+
+function parseSharedListDeepLink(text: string): { listId: string; listKey: string } {
+   const trimmed = text.trim();
+   if (!trimmed) {
+     throw new Error("Nessun link inserito");
+   }
+
+   // Se l'utente incolla un testo lungo, estraiamo solo la prima occorrenza di sharedlist://...
+   const match = trimmed.match(/sharedlist:\/\/\S+/);
+   const urlStr = match ? match[0] : trimmed;
+
+   if (!urlStr.toLowerCase().startsWith("sharedlist://")) {
+     throw new Error("Link non valido: deve iniziare con sharedlist://");
+   }
+
+   // Togliamo lo schema "sharedlist://"
+   let rest = urlStr.slice("sharedlist://".length);
+   // Rimuoviamo eventuali slash iniziali in eccesso
+   rest = rest.replace(/^\/+/, ""); // es. "l/ID?k=..." o "l/ID" ecc.
+
+   // Separiamo path e query
+   const [pathPart, queryPart = ""] = rest.split("?");
+   const segments = pathPart.split("/").filter(Boolean); // es. ["l", "<listId>"]
+
+   if (segments.length < 2) {
+     throw new Error("Link incompleto: mancano parti del percorso");
+   }
+
+   const first = segments[0];
+   if (first !== "l") {
+     throw new Error("Link non riconosciuto: percorso non inizia con /l/");
+   }
+
+   const listId = segments.slice(1).join("/"); // in pratica il resto dopo "l/"
+   if (!listId) {
+     throw new Error("Link incompleto: ID lista mancante");
+   }
+
+   // Parse molto semplice della query: cerchiamo k=<chiave>
+   let listKey = "";
+   if (queryPart) {
+     const pairs = queryPart.split("&");
+     for (const pair of pairs) {
+       const [k, v] = pair.split("=");
+       if (k === "k" && v != null) {
+         listKey = decodeURIComponent(v);
+         break;
+       }
+     }
+   }
+
+   if (!listKey) {
+     throw new Error("Link incompleto: chiave k mancante");
+   }
+
+   return { listId, listKey };
+ }
+
+
+
 export const MyListsScreen: React.FC<Props> = ({
   onSelectList,
   onCreateNewList,
@@ -36,6 +107,8 @@ export const MyListsScreen: React.FC<Props> = ({
   const [lists, setLists] = useState<ListWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+  const [importDialogVisible, setImportDialogVisible] = useState(false);
+  const [importLinkText, setImportLinkText] = useState("");
 
   //
   // 1) Caricamento iniziale: health + liste + hasRemoteChanges
@@ -98,11 +171,16 @@ export const MyListsScreen: React.FC<Props> = ({
     let cancelled = false;
     let intervalId: any = null;
 
-    async function checkHealth() {
+    async function checkHealthAndMaybeRefresh() {
       try {
         const ok = await apiHealthz();
         if (!cancelled) setBackendOnline(ok);
-      } catch {
+
+        // se il backend è online, proviamo ad aggiornare i nomi placeholder
+        if (ok && !cancelled) {
+          await refreshImportedListNamesIfNeeded(setLists);
+        }
+      } catch (e) {
         if (!cancelled) setBackendOnline(false);
       }
     }
@@ -115,13 +193,14 @@ export const MyListsScreen: React.FC<Props> = ({
             ? settings.healthCheckIntervalMs
             : 30000;
 
-        await checkHealth();
+        await checkHealthAndMaybeRefresh();
+
         if (!cancelled) {
-          intervalId = setInterval(checkHealth, intervalMs);
+          intervalId = setInterval(checkHealthAndMaybeRefresh, intervalMs);
         }
       } catch (e) {
         console.warn("Failed to setup health polling", e);
-        await checkHealth();
+        await checkHealthAndMaybeRefresh();
       }
     }
 
@@ -132,6 +211,7 @@ export const MyListsScreen: React.FC<Props> = ({
       if (intervalId) clearInterval(intervalId);
     };
   }, []);
+
 
 
   //
@@ -161,6 +241,117 @@ export const MyListsScreen: React.FC<Props> = ({
       unsubscribe();
     };
   }, []);
+
+  async function refreshImportedListNamesIfNeeded(
+    setLists: (lists: StoredList[]) => void
+  ) {
+    try {
+      const stored = await loadStoredLists();
+      const candidates = stored.filter(
+        (l) => !l.name || l.name === PLACEHOLDER_NAME
+      );
+      if (candidates.length === 0) return;
+
+      let changed = false;
+
+      const updated: StoredList[] = await Promise.all(
+        stored.map(async (l) => {
+          if (l.name && l.name !== PLACEHOLDER_NAME) {
+            return l;
+          }
+
+          try {
+            const metaRes = await apiGetList(l.listId);
+            const metaPlain = decryptJson<ListMeta>(
+              l.listKey as ListKey,
+              metaRes.meta_ciphertext_b64,
+              metaRes.meta_nonce_b64
+            );
+
+            if (metaPlain?.name && metaPlain.name !== l.name) {
+              changed = true;
+              return {
+                ...l,
+                name: metaPlain.name,
+              };
+            }
+          } catch (e) {
+            console.warn(
+              "Impossibile aggiornare il nome per lista",
+              l.listId,
+              e
+            );
+          }
+
+          return l;
+        })
+      );
+
+      if (changed) {
+        await saveStoredLists(updated);
+        setLists(updated);
+      }
+    } catch (e) {
+      console.warn("refreshImportedListNamesIfNeeded error", e);
+    }
+  }
+
+  async function handleImportConfirm() {
+    try {
+      const { listId, listKey } = parseSharedListDeepLink(importLinkText);
+
+      const defaultName = "Lista importata";
+
+      // 1) carichiamo lo stato PERSISTENTE, non solo quello in memoria
+      const stored = await loadStoredLists();
+
+      // 2) uniamo la lista importata allo store
+      let updated: StoredList[];
+      const existing = stored.find((l) => l.listId === listId);
+
+      if (existing) {
+        updated = stored.map((l) =>
+          l.listId === listId
+            ? {
+                ...l,
+                listKey,
+                name: l.name || defaultName,
+                pendingCreate: false,
+              }
+            : l
+        );
+      } else {
+        updated = [
+          ...stored,
+          {
+            listId,
+            name: defaultName,
+            listKey,
+            pendingCreate: false,
+          },
+        ];
+      }
+
+      // 3) salviamo davvero su AsyncStorage
+      await saveStoredLists(updated);
+
+      // 4) aggiorniamo lo stato in memoria
+      setLists(updated);
+
+      // 5) chiudiamo dialog + puliamo input
+      setImportDialogVisible(false);
+      setImportLinkText("");
+
+      // 6) e apriamo subito la lista importata
+      onSelectList(listId, listKey);
+    } catch (e: any) {
+      Alert.alert(
+        "Link non valido",
+        e?.message ?? "Impossibile leggere il link incollato"
+      );
+    }
+  }
+
 
   //
   // 4) Funzioni per i toast e per la gestione delete
@@ -281,6 +472,14 @@ export const MyListsScreen: React.FC<Props> = ({
             )}
           </TouchableOpacity>
 
+          {/* pulsante + per incollare deep link */}
+          <TouchableOpacity
+            style={styles.headerAddButton}
+            onPress={() => setImportDialogVisible(true)}
+          >
+            <Text style={styles.headerAddIcon}>＋</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.settingsButton}
             onPress={onOpenSettings}
@@ -334,6 +533,54 @@ export const MyListsScreen: React.FC<Props> = ({
       <View style={styles.bottom}>
         <Button title="Crea una nuova lista" onPress={onCreateNewList} />
       </View>
+      <Modal
+        transparent
+        visible={importDialogVisible}
+        animationType="slide"
+        onRequestClose={() => setImportDialogVisible(false)}
+      >
+        <View style={styles.importModalBackdrop}>
+          <View style={styles.importModalContent}>
+            <Text style={styles.importModalTitle}>Incolla il link della lista</Text>
+            <Text style={styles.importModalHelper}>
+              Incolla un link del tipo:
+              {"\n"}
+              sharedlist://l/&lt;id&gt;?k=&lt;chiave&gt;
+            </Text>
+
+            <TextInput
+              style={styles.importModalInput}
+              value={importLinkText}
+              onChangeText={setImportLinkText}
+              placeholder="sharedlist://l/..."
+              multiline
+            />
+
+            <View style={styles.importModalButtonsRow}>
+              <TouchableOpacity
+                style={styles.importModalButton}
+                onPress={() => setImportDialogVisible(false)}
+              >
+                <Text style={styles.importModalButtonText}>Annulla</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.importModalButton, styles.importModalButtonPrimary]}
+                onPress={handleImportConfirm}
+              >
+                <Text
+                  style={[
+                    styles.importModalButtonText,
+                    { color: "white" },
+                  ]}
+                >
+                  Importa
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -367,6 +614,21 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     backgroundColor: "#bdc3c7",
+  },
+
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  headerAddButton: {
+    marginLeft: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+
+  headerAddIcon: {
+    fontSize: 22,
   },
 
   emptyText: { fontSize: 14, color: "#666", marginBottom: 16 },
@@ -421,4 +683,54 @@ const styles = StyleSheet.create({
   },
 
   bottom: { paddingVertical: 16 },
+
+  importModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  importModalContent: {
+    width: "90%",
+    backgroundColor: "white",
+    borderRadius: 8,
+    padding: 16,
+  },
+  importModalTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  importModalHelper: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 8,
+  },
+  importModalInput: {
+    minHeight: 80,
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    fontSize: 14,
+    textAlignVertical: "top",
+  },
+  importModalButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 16,
+  },
+  importModalButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginLeft: 8,
+  },
+  importModalButtonPrimary: {
+    backgroundColor: "#007AFF",
+    borderRadius: 6,
+  },
+  importModalButtonText: {
+    fontSize: 14,
+  },
+
 });

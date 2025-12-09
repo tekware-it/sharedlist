@@ -7,15 +7,32 @@ export async function loadStoredLists(): Promise<StoredList[]> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
   if (!raw) return [];
   try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed as StoredList[];
-    return [];
-  } catch {
-    return [];
-  }
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+
+      return parsed.map((l: any) => {
+        const lastSeen =
+          typeof l.lastSeenRev === "number" ? l.lastSeenRev : null;
+        const lastRemote =
+          typeof l.lastRemoteRev === "number"
+            ? l.lastRemoteRev
+            : lastSeen; // default: allineato al visto
+
+        return {
+          listId: String(l.listId),
+          listKey: String(l.listKey),
+          name: String(l.name ?? "Lista senza nome"),
+          lastSeenRev: lastSeen,
+          lastRemoteRev: lastRemote,
+          pendingCreate: !!l.pendingCreate,
+        } as StoredList;
+      });
+    } catch {
+      return [];
+    }
 }
 
-async function saveStoredLists(lists: StoredList[]): Promise<void> {
+export async function saveStoredLists(lists: StoredList[]): Promise<void> {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(lists));
 }
 
