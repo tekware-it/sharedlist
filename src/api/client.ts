@@ -1,6 +1,5 @@
-const BASE_URL = __DEV__
-  ? "http://192.168.1.110:8000" // Android emulator -> host machine
-  : "https://your-production-backend.example.com"; // TODO: change for production
+import { getBackendUrl } from "../storage/settingsStore";
+
 
 export type ListMetaCipher = {
   list_id: string;
@@ -23,38 +22,29 @@ export type ItemsListResponse = {
   latest_rev: number | null;
 };
 
-async function apiFetch(
-  path: string,
-  options: RequestInit & { clientId?: string } = {}
-) {
-  const { clientId, ...rest } = options;
+async function apiFetch(path: string, options: ApiOptions = {}): Promise<any> {
+  const baseUrl = await getBackendUrl();
+  const url = baseUrl.replace(/\/+$/, "") + path;
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(rest.headers as Record<string, string> | undefined),
   };
-  if (clientId) {
-    headers["X-Client-Id"] = clientId;
+  if (options.clientId) {
+    headers["X-Client-Id"] = options.clientId;
   }
 
-  const resp = await fetch(`${BASE_URL}${path}`, {
-    ...rest,
+  const res = await fetch(url, {
+    method: options.method ?? "GET",
     headers,
+    body: options.body,
   });
 
-  const text = await resp.text();
-  let json: any = null;
-  try {
-    json = text ? JSON.parse(text) : null;
-  } catch {
-    // ignore non-JSON
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`HTTP ${res.status}: ${text}`);
   }
 
-  if (!resp.ok) {
-    const detail = json?.detail ?? text ?? resp.statusText;
-    throw new Error(`HTTP ${resp.status}: ${detail}`);
-  }
-
-  return json;
+  return res.status === 204 ? null : res.json();
 }
 
 export async function apiCreateList(params: {

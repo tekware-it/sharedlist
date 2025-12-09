@@ -1,5 +1,5 @@
 // src/screens/ListScreen.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -46,6 +46,8 @@ import {
   saveStoredItems,
   type StoredItemPlain,
 } from "../storage/itemsStore";
+import Clipboard from "@react-native-clipboard/clipboard";
+
 
 type Props = {
   listId: string;
@@ -70,6 +72,57 @@ const fallbackFlagsDefinition: FlagsDefinition = {
 export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const [meta, setMeta] = useState<ListMeta | null>(null);
   const [items, setItems] = useState<ItemView[]>([]);
+
+  const { orderedItems, firstCrossedIndex } = useMemo(() => {
+    type Indexed = { it: ItemView; idx: number };
+
+    const activeIndexed: Indexed[] = [];
+    const crossed: ItemView[] = [];
+
+    function priorityFor(it: ItemView): number {
+      const flags = it.plaintext?.flags;
+      const checked = !!flags?.checked;
+      const highlighted = !!flags?.highlighted;
+
+      // 0: highlighted & !checked
+      // 1: !highlighted & !checked
+      // 2: highlighted & checked
+      // 3: !highlighted & checked
+      if (!checked && highlighted) return 0;
+      if (!checked && !highlighted) return 1;
+      if (checked && highlighted) return 2;
+      if (checked && !highlighted) return 3;
+      return 4;
+    }
+
+    items.forEach((it, idx) => {
+      const isCrossed = !!it.plaintext?.flags?.crossed;
+      if (isCrossed) {
+        crossed.push(it);
+      } else {
+        activeIndexed.push({ it, idx });
+      }
+    });
+
+    // ordiniamo solo gli attivi in base alla priorità, mantenendo stabilità con idx
+    activeIndexed.sort((a, b) => {
+      const pa = priorityFor(a.it);
+      const pb = priorityFor(b.it);
+      if (pa !== pb) return pa - pb;
+      return a.idx - b.idx; // stabilità
+    });
+
+    const active = activeIndexed.map((x) => x.it);
+
+    const index =
+      active.length > 0 && crossed.length > 0 ? active.length : -1;
+
+    return {
+      orderedItems: [...active, ...crossed],
+      firstCrossedIndex: index,
+    };
+  }, [items]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -633,6 +686,53 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     );
   }
 
+  function formatItemText(item: ItemView): string {
+    if (!item.plaintext) return "- (cifratura non leggibile)";
+
+    const { label, flags } = item.plaintext;
+    if (!flags) return `- ${label}`;
+
+    let prefix = "[ ]";
+    if (flags.checked) prefix = "[x]";
+    else if (flags.crossed) prefix = "[-]";
+
+    const suffix = flags.highlighted ? " ⭐" : "";
+    return `${prefix} ${label}${suffix}`;
+  }
+
+  function handleCopyAsText() {
+    const title = meta?.name ?? "Lista";
+
+    const lines: string[] = [];
+    lines.push(title);
+    lines.push("");
+
+    if (orderedItems.length === 0) {
+      lines.push("(lista vuota)");
+    } else {
+      orderedItems.forEach((item, index) => {
+        const isCrossed = item.plaintext?.flags?.crossed;
+
+        if (index === firstCrossedIndex && firstCrossedIndex >= 0) {
+          lines.push("");
+          lines.push("--- Da verificare ---");
+        }
+
+        lines.push(formatItemText(item));
+      });
+    }
+
+    const text = lines.join("\n");
+    Clipboard.setString(text);
+
+    if (Platform.OS === "android") {
+      ToastAndroid.show("Lista copiata negli appunti", ToastAndroid.SHORT);
+    } else {
+      Alert.alert("Copiato", "Lista copiata negli appunti");
+    }
+  }
+
+
   //
   // Render
   //
@@ -662,16 +762,31 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       <View style={styles.container}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>{meta?.name ?? "Lista"}</Text>
-          <Button title="Condividi lista" onPress={handleShare} />
+
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.headerIconButton}
+              onPress={handleCopyAsText}
+            >
+              <Text style={styles.headerIconText}>📋</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.headerIconButton}
+              onPress={handleShare}
+            >
+              <Text style={styles.headerIconText}>📤</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {items.length === 0 ? (
           <Text style={styles.emptyText}>Nessun elemento nella lista.</Text>
         ) : (
           <FlatList
-            data={items}
+            data={orderedItems}
             keyExtractor={(it) => it.localId}
-            renderItem={({ item }) => {
+            renderItem={({ item, index }) => {
               const flags = item.plaintext?.flags;
               const labelStyles = [
                 styles.itemLabel,
@@ -683,65 +798,75 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
               const isPending = item.pendingCreate || item.pendingUpdate;
 
               return (
-                <View style={styles.itemRow}>
-                  <View style={styles.itemContent}>
-                    <Text style={labelStyles}>
-                      {item.plaintext?.label ?? "(cifratura non leggibile)"}
-                    </Text>
-                  </View>
+                <>
+                  {index === firstCrossedIndex && firstCrossedIndex >= 0 && (
+                    <View style={styles.crossedSeparator}>
+                      <View style={styles.crossedSeparatorLine} />
+                      <Text style={styles.crossedSeparatorLabel}>Da verificare</Text>
+                      <View style={styles.crossedSeparatorLine} />
+                    </View>
+                  )}
 
-                  <View style={styles.itemRightRow}>
-                    {flags && (
-                      <View style={styles.flagsRow}>
+                  <View style={styles.itemRow}>
+                    <View style={styles.itemContent}>
+                      <Text style={labelStyles}>
+                        {item.plaintext?.label ?? "(cifratura non leggibile)"}
+                      </Text>
+                    </View>
+
+                    <View style={styles.itemRightRow}>
+                      {flags && (
+                        <View style={styles.flagsRow}>
+                          <TouchableOpacity
+                            style={[
+                              styles.flagChip,
+                              flags.checked && styles.flagChipActive,
+                            ]}
+                            onPress={() => handleToggleFlag(item, "checked")}
+                          >
+                            <Text style={styles.flagChipText}>✅</Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={[
+                              styles.flagChip,
+                              flags.crossed && styles.flagChipActive,
+                            ]}
+                            onPress={() => handleToggleFlag(item, "crossed")}
+                          >
+                            <Text style={styles.flagChipText}>❓</Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={[
+                              styles.flagChip,
+                              flags.highlighted && styles.flagChipActive,
+                            ]}
+                            onPress={() => handleToggleFlag(item, "highlighted")}
+                          >
+                            <Text style={styles.flagChipText}>⭐</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+
+                      {isPending && (
                         <TouchableOpacity
-                          style={[
-                            styles.flagChip,
-                            flags.checked && styles.flagChipActive,
-                          ]}
-                          onPress={() => handleToggleFlag(item, "checked")}
+                          style={styles.pendingItemContainer}
+                          onPress={showPendingItemToast}
                         >
-                          <Text style={styles.flagChipText}>✅</Text>
+                          <Text style={styles.pendingItemIcon}>⏳</Text>
                         </TouchableOpacity>
+                      )}
 
-                        <TouchableOpacity
-                          style={[
-                            styles.flagChip,
-                            flags.crossed && styles.flagChipActive,
-                          ]}
-                          onPress={() => handleToggleFlag(item, "crossed")}
-                        >
-                          <Text style={styles.flagChipText}>❓</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          style={[
-                            styles.flagChip,
-                            flags.highlighted && styles.flagChipActive,
-                          ]}
-                          onPress={() => handleToggleFlag(item, "highlighted")}
-                        >
-                          <Text style={styles.flagChipText}>⭐</Text>
-                        </TouchableOpacity>
-                      </View>
-                    )}
-
-                    {isPending && (
                       <TouchableOpacity
-                        style={styles.pendingItemContainer}
-                        onPress={showPendingItemToast}
+                        style={styles.itemTrashButton}
+                        onPress={() => handleDeleteItem(item)}
                       >
-                        <Text style={styles.pendingItemIcon}>⏳</Text>
+                        <Text style={styles.itemTrashText}>🗑️</Text>
                       </TouchableOpacity>
-                    )}
-
-                    <TouchableOpacity
-                      style={styles.itemTrashButton}
-                      onPress={() => handleDeleteItem(item)}
-                    >
-                      <Text style={styles.itemTrashText}>🗑️</Text>
-                    </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
+                </>
               );
             }}
           />
@@ -835,6 +960,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  headerIconButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  headerIconText: {
+    fontSize: 20,
+  },
+
   pendingItemContainer: {
     paddingHorizontal: 4,
     paddingVertical: 4,
@@ -859,6 +996,24 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     marginTop: 8,
   },
+
+  crossedSeparator: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  crossedSeparatorLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "#ccc",
+  },
+  crossedSeparatorLabel: {
+    marginHorizontal: 8,
+    fontSize: 12,
+    color: "#666",
+  },
+
   input: {
     flex: 1,
     borderWidth: 1,

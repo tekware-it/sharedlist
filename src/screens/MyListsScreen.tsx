@@ -18,17 +18,20 @@ import type { StoredList } from "../storage/types";
 import { apiFetchItems, apiDeleteList, apiHealthz } from "../api/client";
 import { getClientId } from "../storage/clientId";
 import { syncEvents } from "../events/syncEvents";
+import { loadSettings } from "../storage/settingsStore";
 
 type ListWithStatus = StoredList & { hasRemoteChanges: boolean };
 
 type Props = {
   onSelectList: (listId: string, listKey: string) => void;
   onCreateNewList: () => void;
+  onOpenSettings: () => void;
 };
 
 export const MyListsScreen: React.FC<Props> = ({
   onSelectList,
   onCreateNewList,
+  onOpenSettings,
 }) => {
   const [lists, setLists] = useState<ListWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,6 +96,7 @@ export const MyListsScreen: React.FC<Props> = ({
   //
   useEffect(() => {
     let cancelled = false;
+    let intervalId: any = null;
 
     async function checkHealth() {
       try {
@@ -103,14 +107,32 @@ export const MyListsScreen: React.FC<Props> = ({
       }
     }
 
-    checkHealth();
-    const id = setInterval(checkHealth, 3000);
+    async function setup() {
+      try {
+        const settings = await loadSettings();
+        const intervalMs =
+          settings.healthCheckIntervalMs && settings.healthCheckIntervalMs > 0
+            ? settings.healthCheckIntervalMs
+            : 30000;
+
+        await checkHealth();
+        if (!cancelled) {
+          intervalId = setInterval(checkHealth, intervalMs);
+        }
+      } catch (e) {
+        console.warn("Failed to setup health polling", e);
+        await checkHealth();
+      }
+    }
+
+    setup();
 
     return () => {
       cancelled = true;
-      clearInterval(id);
+      if (intervalId) clearInterval(intervalId);
     };
   }, []);
+
 
   //
   // 3) Sync events: quando il worker sincronizza una lista, rileggo le liste locali
@@ -247,16 +269,27 @@ export const MyListsScreen: React.FC<Props> = ({
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Le mie liste</Text>
-        <TouchableOpacity onPress={showBackendStatusToast}>
-          {backendOnline === null ? (
-            <View style={styles.healthDotUnknown} />
-          ) : backendOnline ? (
-            <View style={styles.healthDotOnline} />
-          ) : (
-            <View style={styles.healthDotOffline} />
-          )}
-        </TouchableOpacity>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={showBackendStatusToast}>
+            {backendOnline === null ? (
+              <View style={styles.healthDotUnknown} />
+            ) : backendOnline ? (
+              <View style={styles.healthDotOnline} />
+            ) : (
+              <View style={styles.healthDotOffline} />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={onOpenSettings}
+          >
+            <Text style={styles.settingsIcon}>⚙️</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
 
       {lists.length === 0 ? (
         <Text style={styles.emptyText}>
@@ -372,6 +405,19 @@ const styles = StyleSheet.create({
   },
   trashText: {
     fontSize: 18,
+  },
+
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  settingsButton: {
+    marginLeft: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+  settingsIcon: {
+    fontSize: 20,
   },
 
   bottom: { paddingVertical: 16 },

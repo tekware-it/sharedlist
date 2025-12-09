@@ -14,11 +14,13 @@ import { ListScreen } from "./src/screens/ListScreen";
 import { parseSharedListUrl } from "./src/linking/sharedListLink";
 import { upsertStoredList } from "./src/storage/listsStore";
 import { startSyncWorker } from "./src/sync/syncWorker";
+import { SettingsScreen } from "./src/screens/SettingsScreen";
 
 type ScreenState =
   | { type: "myLists" }
   | { type: "create" }
-  | { type: "list"; listId: string; listKey: string };
+  | { type: "list"; listId: string; listKey: string }
+  | { type: "settings" };
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -107,31 +109,40 @@ export default function App() {
     );
   }
 
-  return (
-    <SafeAreaView style={{ flex: 1 }}>
-      {screen.type === "myLists" && (
-        <MyListsScreen
-          onSelectList={(listId, listKey) =>
-            setScreen({ type: "list", listId, listKey })
-          }
-          onCreateNewList={() => setScreen({ type: "create" })}
-        />
-      )}
+  let content = null;
 
-      {screen.type === "create" && (
-        <CreateListScreen
-          onListCreated={async ({ listId, listKey }) => {
-            setScreen({ type: "list", listId, listKey });
-          }}
-        />
-      )}
+  if (screen.type === "myLists") {
+    content = (
+      <MyListsScreen
+        onSelectList={(listId, listKey) =>
+          setScreen({ type: "list", listId, listKey })
+        }
+        onCreateNewList={() => setScreen({ type: "createList" })}
+        onOpenSettings={() => setScreen({ type: "settings" })} // 👈 qui
+      />
+    );
+  } else if (screen.type === "createList") {
+    content = (
+      <CreateListScreen
+        onCreated={(listId, listKey) =>
+          setScreen({ type: "list", listId, listKey })
+        }
+        onCancel={() => setScreen({ type: "myLists" })}
+      />
+    );
+  } else if (screen.type === "list") {
+    content = (
+      <ListScreen
+        listId={screen.listId}
+        listKeyParam={screen.listKey}
+      />
+    );
+  } else if (screen.type === "settings") {
+    content = (
+      <SettingsScreen onClose={() => setScreen({ type: "myLists" })} />
+    );
+  }
 
-      {screen.type === "list" && (
-        <ListScreen
-          listId={screen.listId}
-          listKeyParam={screen.listKey}
-        />
-      )}
-    </SafeAreaView>
-  );
+  return <SafeAreaView style={{ flex: 1 }}>{content}</SafeAreaView>;
+
 }
