@@ -16,12 +16,23 @@ import {
 } from "react-native";
 
 import {
+  mergeRemoteItemsIntoLocal,
+  type RemoteItemSnapshot,
+} from "../storage/itemsStore";
+import type { ListItemPlain } from "../models/list";
+
+import {
   loadStoredLists,
   saveStoredLists,
   removeStoredList,
 } from "../storage/listsStore";
 import type { StoredList } from "../storage/types";
-import { apiFetchItems, apiDeleteList, apiHealthz, apiGetList } from "../api/client";
+import {
+  apiFetchItems,
+  apiDeleteList,
+  apiHealthz,
+  apiGetList,
+} from "../api/client";
 import { getClientId } from "../storage/clientId";
 import { syncEvents } from "../events/syncEvents";
 import { loadSettings } from "../storage/settingsStore";
@@ -39,65 +50,65 @@ type Props = {
   onOpenSettings: () => void;
 };
 
+function parseSharedListDeepLink(text: string): {
+  listId: string;
+  listKey: string;
+} {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    throw new Error("Nessun link inserito");
+  }
 
-function parseSharedListDeepLink(text: string): { listId: string; listKey: string } {
-   const trimmed = text.trim();
-   if (!trimmed) {
-     throw new Error("Nessun link inserito");
-   }
+  // Se l'utente incolla un testo lungo, estraiamo solo la prima occorrenza di sharedlist://...
+  const match = trimmed.match(/sharedlist:\/\/\S+/);
+  const urlStr = match ? match[0] : trimmed;
 
-   // Se l'utente incolla un testo lungo, estraiamo solo la prima occorrenza di sharedlist://...
-   const match = trimmed.match(/sharedlist:\/\/\S+/);
-   const urlStr = match ? match[0] : trimmed;
+  if (!urlStr.toLowerCase().startsWith("sharedlist://")) {
+    throw new Error("Link non valido: deve iniziare con sharedlist://");
+  }
 
-   if (!urlStr.toLowerCase().startsWith("sharedlist://")) {
-     throw new Error("Link non valido: deve iniziare con sharedlist://");
-   }
+  // Togliamo lo schema "sharedlist://"
+  let rest = urlStr.slice("sharedlist://".length);
+  // Rimuoviamo eventuali slash iniziali in eccesso
+  rest = rest.replace(/^\/+/, ""); // es. "l/ID?k=..." o "l/ID" ecc.
 
-   // Togliamo lo schema "sharedlist://"
-   let rest = urlStr.slice("sharedlist://".length);
-   // Rimuoviamo eventuali slash iniziali in eccesso
-   rest = rest.replace(/^\/+/, ""); // es. "l/ID?k=..." o "l/ID" ecc.
+  // Separiamo path e query
+  const [pathPart, queryPart = ""] = rest.split("?");
+  const segments = pathPart.split("/").filter(Boolean); // es. ["l", "<listId>"]
 
-   // Separiamo path e query
-   const [pathPart, queryPart = ""] = rest.split("?");
-   const segments = pathPart.split("/").filter(Boolean); // es. ["l", "<listId>"]
+  if (segments.length < 2) {
+    throw new Error("Link incompleto: mancano parti del percorso");
+  }
 
-   if (segments.length < 2) {
-     throw new Error("Link incompleto: mancano parti del percorso");
-   }
+  const first = segments[0];
+  if (first !== "l") {
+    throw new Error("Link non riconosciuto: percorso non inizia con /l/");
+  }
 
-   const first = segments[0];
-   if (first !== "l") {
-     throw new Error("Link non riconosciuto: percorso non inizia con /l/");
-   }
+  const listId = segments.slice(1).join("/"); // in pratica il resto dopo "l/"
+  if (!listId) {
+    throw new Error("Link incompleto: ID lista mancante");
+  }
 
-   const listId = segments.slice(1).join("/"); // in pratica il resto dopo "l/"
-   if (!listId) {
-     throw new Error("Link incompleto: ID lista mancante");
-   }
+  // Parse molto semplice della query: cerchiamo k=<chiave>
+  let listKey = "";
+  if (queryPart) {
+    const pairs = queryPart.split("&");
+    for (const pair of pairs) {
+      const [k, v] = pair.split("=");
+      if (k === "k" && v != null) {
+        listKey = decodeURIComponent(v);
+        break;
+      }
+    }
+  }
 
-   // Parse molto semplice della query: cerchiamo k=<chiave>
-   let listKey = "";
-   if (queryPart) {
-     const pairs = queryPart.split("&");
-     for (const pair of pairs) {
-       const [k, v] = pair.split("=");
-       if (k === "k" && v != null) {
-         listKey = decodeURIComponent(v);
-         break;
-       }
-     }
-   }
+  if (!listKey) {
+    throw new Error("Link incompleto: chiave k mancante");
+  }
 
-   if (!listKey) {
-     throw new Error("Link incompleto: chiave k mancante");
-   }
-
-   return { listId, listKey };
- }
-
-
+  return { listId, listKey };
+}
 
 export const MyListsScreen: React.FC<Props> = ({
   onSelectList,
@@ -110,8 +121,18 @@ export const MyListsScreen: React.FC<Props> = ({
   const [importDialogVisible, setImportDialogVisible] = useState(false);
   const [importLinkText, setImportLinkText] = useState("");
 
+  function computeHasRemoteChanges(l: StoredList): boolean {
+    if (l.lastRemoteRev == null) return false;
+    if (l.lastSeenRev == null) return true; // mai vista → consideriamo "da leggere"
+    return l.lastRemoteRev > l.lastSeenRev;
+  }
+
+  function setListsFromStored(stored: StoredList[]) {
+    setLists(stored.map((l) => ({ ...l, hasRemoteChanges: computeHasRemoteChanges(l) })));
+  }
+
   //
-  // 1) Caricamento iniziale: health + liste + hasRemoteChanges
+  // 1) Caricamento iniziale: solo liste locali (offline-first)
   //
   useEffect(() => {
     let cancelled = false;
@@ -119,39 +140,9 @@ export const MyListsScreen: React.FC<Props> = ({
     async function initialLoad() {
       setLoading(true);
       try {
-        const ok = await apiHealthz();
-        if (cancelled) return;
-        setBackendOnline(ok);
-
         const stored = await loadStoredLists();
         if (cancelled) return;
-
-        const withStatus: ListWithStatus[] = await Promise.all(
-          stored.map(async (l) => {
-            let hasRemoteChanges = false;
-            try {
-              if (!l.pendingCreate && l.lastSeenRev != null && ok) {
-                const res = await apiFetchItems({
-                  listId: l.listId,
-                  since_rev: l.lastSeenRev,
-                });
-                if (
-                  (res.latest_rev != null &&
-                    res.latest_rev > (l.lastSeenRev ?? 0)) ||
-                  res.items.length > 0
-                ) {
-                  hasRemoteChanges = true;
-                }
-              }
-            } catch (e) {
-              console.log("Error checking list updates", l.listId, e);
-            }
-            return { ...l, hasRemoteChanges };
-          })
-        );
-
-        if (cancelled) return;
-        setLists(withStatus);
+        setListsFromStored(stored);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -165,7 +156,7 @@ export const MyListsScreen: React.FC<Props> = ({
   }, []);
 
   //
-  // 2) Poll solo dell'health del backend (per aggiornare il pallino)
+  // 2) Poll di healthz + refresh delle liste (nomi + lastRemoteRev)
   //
   useEffect(() => {
     let cancelled = false;
@@ -176,9 +167,8 @@ export const MyListsScreen: React.FC<Props> = ({
         const ok = await apiHealthz();
         if (!cancelled) setBackendOnline(ok);
 
-        // se il backend è online, proviamo ad aggiornare i nomi placeholder
         if (ok && !cancelled) {
-          await refreshImportedListNamesIfNeeded(setLists);
+          await refreshListsFromServerOnHealth();
         }
       } catch (e) {
         if (!cancelled) setBackendOnline(false);
@@ -212,8 +202,6 @@ export const MyListsScreen: React.FC<Props> = ({
     };
   }, []);
 
-
-
   //
   // 3) Sync events: quando il worker sincronizza una lista, rileggo le liste locali
   //
@@ -221,17 +209,7 @@ export const MyListsScreen: React.FC<Props> = ({
     const unsubscribe = syncEvents.subscribe(async () => {
       try {
         const stored = await loadStoredLists();
-
-        // mantengo i hasRemoteChanges che avevo già
-        setLists((prev) => {
-          const prevMap = new Map(
-            prev.map((l) => [l.listId, l.hasRemoteChanges])
-          );
-          return stored.map((l) => ({
-            ...l,
-            hasRemoteChanges: prevMap.get(l.listId) ?? false,
-          }));
-        });
+        setListsFromStored(stored);
       } catch (e) {
         console.log("Error refreshing lists on sync event", e);
       }
@@ -242,65 +220,158 @@ export const MyListsScreen: React.FC<Props> = ({
     };
   }, []);
 
-  async function refreshImportedListNamesIfNeeded(
-    setLists: (lists: StoredList[]) => void
-  ) {
+  //
+  // Refresh liste dal server durante healthz:
+  // - aggiorna nomi placeholder
+  // - aggiorna lastRemoteRev usando latest_rev
+  //
+  async function refreshListsFromServerOnHealth() {
     try {
       const stored = await loadStoredLists();
-      const candidates = stored.filter(
-        (l) => !l.name || l.name === PLACEHOLDER_NAME
-      );
-      if (candidates.length === 0) return;
+      if (stored.length === 0) return;
 
       let changed = false;
+      const updated: StoredList[] = [];
 
-      const updated: StoredList[] = await Promise.all(
-        stored.map(async (l) => {
-          if (l.name && l.name !== PLACEHOLDER_NAME) {
-            return l;
-          }
+      for (const l of stored) {
+        let newL: StoredList = { ...l };
 
+        // 1) Aggiorna nome se placeholder / vuoto
+        if (!newL.name || newL.name === PLACEHOLDER_NAME) {
           try {
-            const metaRes = await apiGetList(l.listId);
+            const metaRes = await apiGetList(newL.listId);
             const metaPlain = decryptJson<ListMeta>(
-              l.listKey as ListKey,
+              newL.listKey as ListKey,
               metaRes.meta_ciphertext_b64,
               metaRes.meta_nonce_b64
             );
 
-            if (metaPlain?.name && metaPlain.name !== l.name) {
+            if (metaPlain?.name && metaPlain.name !== newL.name) {
+              newL.name = metaPlain.name;
               changed = true;
-              return {
-                ...l,
-                name: metaPlain.name,
-              };
             }
           } catch (e) {
             console.warn(
               "Impossibile aggiornare il nome per lista",
-              l.listId,
+              newL.listId,
               e
             );
           }
+        }
 
-          return l;
-        })
-      );
+        // 2) Aggiorna lastRemoteRev usando latest_rev dal server
+        try {
+          const res = await apiFetchItems({
+            listId: newL.listId,
+            since_rev: newL.lastRemoteRev ?? undefined,
+          });
+
+          if (
+            typeof res.latest_rev === "number" &&
+            res.latest_rev !== newL.lastRemoteRev
+          ) {
+            // 2a) Se il server ha una nuova rev, aggiorniamo anche gli item locali
+            if (Array.isArray(res.items) && res.items.length > 0) {
+              const snapshots: RemoteItemSnapshot[] = [];
+
+              for (const it of res.items) {
+                // struttura attesa dal backend:
+                // { item_id, ciphertext_b64, nonce_b64, deleted, ... }
+
+                if (it.deleted) {
+                  // per deleted non ci serve label/flags, li mettiamo fittizi
+                  snapshots.push({
+                    itemId: it.item_id,
+                    label: "",
+                    flags: {} as any,
+                    deleted: true,
+                  });
+                  continue;
+                }
+
+                try {
+                  const plain = decryptJson<ListItemPlain>(
+                    newL.listKey as ListKey,
+                    it.ciphertext_b64,
+                    it.nonce_b64
+                  );
+
+                  snapshots.push({
+                    itemId: it.item_id,
+                    label: plain.label,
+                    flags: plain.flags,
+                  });
+                } catch (e) {
+                  console.warn(
+                    "Impossibile decifrare item remoto",
+                    it.item_id,
+                    e
+                  );
+                }
+              }
+
+              if (snapshots.length > 0) {
+                await mergeRemoteItemsIntoLocal(newL.listId, snapshots);
+              }
+            }
+
+            // 2b) Aggiorniamo lastRemoteRev ma NON lastSeenRev
+            newL.lastRemoteRev = res.latest_rev;
+            changed = true;
+          }
+        } catch (e) {
+          console.warn(
+            "Impossibile aggiornare latest_rev per lista",
+            newL.listId,
+            e
+          );
+        }
+
+
+        updated.push(newL);
+      }
 
       if (changed) {
         await saveStoredLists(updated);
-        setLists(updated);
+        setListsFromStored(updated);
       }
     } catch (e) {
-      console.warn("refreshImportedListNamesIfNeeded error", e);
+      console.warn("refreshListsFromServerOnHealth error", e);
     }
   }
 
+  //
+  // Import via deep link (+)
+  //
   async function handleImportConfirm() {
     try {
       const { listId, listKey } = parseSharedListDeepLink(importLinkText);
 
-      const defaultName = "Lista importata";
+      let finalName = PLACEHOLDER_NAME;
+      let lastRemoteRev: number | null = null;
+
+      // Proviamo a leggere meta + latest_rev dal server per avere nome e versione reali
+      try {
+        const metaRes = await apiGetList(listId);
+        const metaPlain = decryptJson<ListMeta>(
+          listKey as ListKey,
+          metaRes.meta_ciphertext_b64,
+          metaRes.meta_nonce_b64
+        );
+        if (metaPlain?.name) {
+          finalName = metaPlain.name;
+        }
+
+        const itemsRes = await apiFetchItems({ listId });
+        if (typeof itemsRes.latest_rev === "number") {
+          lastRemoteRev = itemsRes.latest_rev;
+        }
+      } catch (e) {
+        console.warn(
+          "Impossibile leggere meta/latest_rev per lista importata, uso fallback",
+          e
+        );
+      }
 
       // 1) carichiamo lo stato PERSISTENTE, non solo quello in memoria
       const stored = await loadStoredLists();
@@ -315,8 +386,12 @@ export const MyListsScreen: React.FC<Props> = ({
             ? {
                 ...l,
                 listKey,
-                name: l.name || defaultName,
+                name: l.name || finalName,
                 pendingCreate: false,
+                lastRemoteRev:
+                  lastRemoteRev != null
+                    ? lastRemoteRev
+                    : l.lastRemoteRev ?? null,
               }
             : l
         );
@@ -325,10 +400,12 @@ export const MyListsScreen: React.FC<Props> = ({
           ...stored,
           {
             listId,
-            name: defaultName,
+            name: finalName,
             listKey,
             pendingCreate: false,
-          },
+            lastSeenRev: null,
+            lastRemoteRev,
+          } as StoredList,
         ];
       }
 
@@ -336,7 +413,7 @@ export const MyListsScreen: React.FC<Props> = ({
       await saveStoredLists(updated);
 
       // 4) aggiorniamo lo stato in memoria
-      setLists(updated);
+      setListsFromStored(updated);
 
       // 5) chiudiamo dialog + puliamo input
       setImportDialogVisible(false);
@@ -352,9 +429,34 @@ export const MyListsScreen: React.FC<Props> = ({
     }
   }
 
+  //
+  // Quando apro una lista:
+  // - aggiorno lastSeenRev = lastRemoteRev (se esiste)
+  // - il pallino sparisce (hasRemoteChanges diventa false)
+  //
+  async function handleOpenList(list: ListWithStatus) {
+    try {
+      const stored = await loadStoredLists();
+      const updated: StoredList[] = stored.map((l) =>
+        l.listId === list.listId
+          ? {
+              ...l,
+              lastSeenRev:
+                l.lastRemoteRev != null ? l.lastRemoteRev : l.lastSeenRev ?? null,
+            }
+          : l
+      );
+      await saveStoredLists(updated);
+      setListsFromStored(updated);
+    } catch (e) {
+      console.warn("handleOpenList: unable to update lastSeenRev", e);
+    }
+
+    onSelectList(list.listId, list.listKey);
+  }
 
   //
-  // 4) Funzioni per i toast e per la gestione delete
+  // Funzioni per i toast e per la gestione delete
   //
   function showBackendStatusToast() {
     let message: string;
@@ -445,7 +547,7 @@ export const MyListsScreen: React.FC<Props> = ({
   }
 
   //
-  // 5) Render
+  // Render
   //
   if (loading) {
     return (
@@ -489,7 +591,6 @@ export const MyListsScreen: React.FC<Props> = ({
         </View>
       </View>
 
-
       {lists.length === 0 ? (
         <Text style={styles.emptyText}>
           Non hai ancora nessuna lista. Creane una nuova!
@@ -502,7 +603,7 @@ export const MyListsScreen: React.FC<Props> = ({
             <View style={styles.listRow}>
               <TouchableOpacity
                 style={styles.listRowText}
-                onPress={() => onSelectList(item.listId, item.listKey)}
+                onPress={() => handleOpenList(item)}
               >
                 <Text style={styles.listName}>{item.name}</Text>
                 <Text style={styles.listId}>{item.listId}</Text>
@@ -533,6 +634,8 @@ export const MyListsScreen: React.FC<Props> = ({
       <View style={styles.bottom}>
         <Button title="Crea una nuova lista" onPress={onCreateNewList} />
       </View>
+
+      {/* Modal import deep link */}
       <Modal
         transparent
         visible={importDialogVisible}
@@ -541,7 +644,9 @@ export const MyListsScreen: React.FC<Props> = ({
       >
         <View style={styles.importModalBackdrop}>
           <View style={styles.importModalContent}>
-            <Text style={styles.importModalTitle}>Incolla il link della lista</Text>
+            <Text style={styles.importModalTitle}>
+              Incolla il link della lista
+            </Text>
             <Text style={styles.importModalHelper}>
               Incolla un link del tipo:
               {"\n"}
@@ -565,7 +670,10 @@ export const MyListsScreen: React.FC<Props> = ({
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.importModalButton, styles.importModalButtonPrimary]}
+                style={[
+                  styles.importModalButton,
+                  styles.importModalButtonPrimary,
+                ]}
                 onPress={handleImportConfirm}
               >
                 <Text
@@ -669,10 +777,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
 
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
   settingsButton: {
     marginLeft: 8,
     paddingHorizontal: 4,
@@ -732,5 +836,4 @@ const styles = StyleSheet.create({
   importModalButtonText: {
     fontSize: 14,
   },
-
 });

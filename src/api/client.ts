@@ -22,6 +22,14 @@ export type ItemsListResponse = {
   latest_rev: number | null;
 };
 
+export type RemoteItem = {
+  item_id: string;
+  ciphertext_b64: string;
+  nonce_b64: string;
+  rev: number;
+  deleted: boolean;
+};
+
 async function apiFetch(path: string, options: ApiOptions = {}): Promise<any> {
   const baseUrl = await getBackendUrl();
   const url = baseUrl.replace(/\/+$/, "") + path;
@@ -138,6 +146,14 @@ export async function apiDeleteItem(params: {
     method: "DELETE",
     clientId,
   });
+}
+
+export async function apiGetItems(
+  listId: string,
+  sinceRev?: number
+): Promise<{ items: RemoteItem[]; latest_rev: number }> {
+  const query = sinceRev != null ? `?since_rev=${sinceRev}` : "";
+  return apiFetch(`/v1/lists/${listId}/items${query}`);
 }
 
 export async function apiHealthz(): Promise<boolean> {
