@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,20 +7,22 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  BackHandler,
 } from "react-native";
 import uuid from "react-native-uuid";
 
 import { apiCreateList } from "../api/client";
-import { generateListKey, encryptJson, ListKey } from "../crypto/e2e";
 import { upsertStoredList } from "../storage/listsStore";
 import type { FlagsDefinition, ListMeta } from "../models/list";
 import { getClientId } from "../storage/clientId";
 import { buildSharedListUrl } from "../linking/sharedListLink";
 import { enqueueCreateList } from "../storage/syncQueue";
+import { generateListKey, encryptJson, ListKey } from "../crypto/e2e";
 
 
 type Props = {
-  onListCreated: (params: { listId: string; listKey: ListKey }) => void;
+  onCreated: (listId: string, listKey: string) => void;  // 👈 questo
+  onCancel: () => void;
 };
 
 const defaultFlagsDefinition: FlagsDefinition = {
@@ -38,9 +40,22 @@ function makeDefaultListName(): string {
 }
 
 
-export const CreateListScreen: React.FC<Props> = ({ onListCreated }) => {
+export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
   const [name, setName] = useState<string>(() => makeDefaultListName());
   const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+      const sub = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => {
+          onCancel();  // torna a "Le mie liste"
+          return true; // abbiamo gestito noi il back
+        }
+      );
+
+      return () => sub.remove();
+    }, [onCancel]);
+
 
   async function handleCreate() {
     const trimmed = name.trim() || makeDefaultListName();
@@ -98,7 +113,7 @@ export const CreateListScreen: React.FC<Props> = ({ onListCreated }) => {
         );
       }
 
-      onListCreated({ listId, listKey });
+      onCreated(listId, listKey);
     } catch (e: any) {
       console.error(e);
       Alert.alert(

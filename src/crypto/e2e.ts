@@ -1,29 +1,83 @@
-// Temporary "fake" crypto implementation to get the app running.
-// Later you can replace this with react-native-libsodium (XChaCha20-Poly1305).
+// src/crypto/e2e.ts
+import nacl from "tweetnacl";
+import * as naclUtil from "tweetnacl-util";
 
+/**
+ * ListKey è una stringa base64 che rappresenta 32 byte di chiave.
+ * Non viene mai inviata al server, solo inclusa nei link e salvata localmente.
+ */
 export type ListKey = string;
 
-export function generateListKey(): ListKey {
-  // For now just return a fixed string. Replace with secure random bytes.
-  return "FAKE_KEY_BASE64_CHANGE_ME";
+function randomBytes(length: number): Uint8Array {
+  const arr = new Uint8Array(length);
+  // grazie a react-native-get-random-values
+  crypto.getRandomValues(arr);
+  return arr;
 }
 
+/**
+ * Genera una nuova chiave per una lista.
+ * Restituisce una stringa base64 pronta da usare come ListKey.
+ */
+export function generateListKey(): ListKey {
+  const key = randomBytes(nacl.secretbox.keyLength); // 32 byte
+  return naclUtil.encodeBase64(key);
+}
+
+/**
+ * Converte la stringa base64 della chiave in Uint8Array.
+ */
+function keyFromListKey(listKey: ListKey): Uint8Array {
+  const key = naclUtil.decodeBase64(listKey);
+  if (key.length !== nacl.secretbox.keyLength) {
+    throw new Error("Invalid list key length");
+  }
+  return key;
+}
+
+/**
+ * Cifra un oggetto JSON con secretbox (XSalsa20-Poly1305).
+ * Restituisce { ciphertext_b64, nonce_b64 } da mandare al backend.
+ */
 export function encryptJson(
-  keyB64: ListKey,
+  listKey: ListKey,
   data: unknown
 ): { ciphertextB64: string; nonceB64: string } {
+  const key = keyFromListKey(listKey);
+  const nonce = randomBytes(nacl.secretbox.nonceLength); // 24 byte
+
   const json = JSON.stringify(data);
-  const nonce = "nonce";
-  const payload = btoa(json + "|" + nonce);
-  return { ciphertextB64: payload, nonceB64: btoa(nonce) };
+  const messageUint8 = naclUtil.decodeUTF8(json);
+
+  const box = nacl.secretbox(messageUint8, nonce, key);
+  if (!box) {
+    throw new Error("Encryption failed");
+  }
+
+  return {
+    ciphertextB64: naclUtil.encodeBase64(box),
+    nonceB64: naclUtil.encodeBase64(nonce),
+  };
 }
 
+/**
+ * Decifra un JSON cifrato con encryptJson.
+ * Se la decifratura fallisce (chiave sbagliata / dati corrotti) lancia errore.
+ */
 export function decryptJson<T>(
-  keyB64: ListKey,
+  listKey: ListKey,
   ciphertextB64: string,
   nonceB64: string
 ): T {
-  const decoded = atob(ciphertextB64);
-  const [json] = decoded.split("|");
+  const key = keyFromListKey(listKey);
+  const nonce = naclUtil.decodeBase64(nonceB64);
+  const ciphertext = naclUtil.decodeBase64(ciphertextB64);
+
+  const messageUint8 = nacl.secretbox.open(ciphertext, nonce, key);
+  if (!messageUint8) {
+    throw new Error("Decryption failed (wrong key or corrupted data)");
+  }
+
+  const json = naclUtil.encodeUTF8(messageUint8);
   return JSON.parse(json) as T;
 }

@@ -16,6 +16,8 @@ import { upsertStoredList } from "./src/storage/listsStore";
 import { startSyncWorker } from "./src/sync/syncWorker";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
 
+import "react-native-get-random-values";
+
 type ScreenState =
   | { type: "myLists" }
   | { type: "create" }
@@ -89,6 +91,39 @@ export default function App() {
   useEffect(() => {
     startSyncWorker();
   }, []);
+
+  useEffect(() => {
+      function handleUrl(url: string | null) {
+        if (!url) return;
+        try {
+          const parsed = new URL(url); // funziona in RN moderno
+
+          // sharedlist://l/<listId>?k=<chiave>
+          if (parsed.protocol === "sharedlist:" && parsed.host === "l") {
+            const path = parsed.pathname.replace(/^\/+/, ""); // toglie / iniziali
+            const listId = path; // qui path è solo "<listId>"
+            const key = parsed.searchParams.get("k");
+            if (listId && key) {
+              setScreen({ type: "list", listId, listKey: key });
+            }
+          }
+        } catch (e) {
+          console.warn("Invalid URL", url, e);
+        }
+      }
+
+      // URL iniziale (app aperta da link)
+      Linking.getInitialURL().then(handleUrl).catch(console.warn);
+
+      // URL ricevuti a caldo (app già aperta)
+      const sub = Linking.addEventListener("url", (event) =>
+        handleUrl(event.url)
+      );
+
+      return () => {
+        sub.remove();
+      };
+    }, []);
 
 
   if (!ready) {
