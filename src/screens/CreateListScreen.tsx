@@ -18,6 +18,7 @@ import { getClientId } from "../storage/clientId";
 import { buildSharedListUrl } from "../linking/sharedListLink";
 import { enqueueCreateList } from "../storage/syncQueue";
 import { generateListKey, encryptJson, ListKey } from "../crypto/e2e";
+import { subscribeToListPush } from "../push/subscribe";
 
 
 type Props = {
@@ -112,7 +113,7 @@ export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
           "Lista creata solo sul dispositivo. Verrà sincronizzata automaticamente quando il server sarà raggiungibile."
         );
       }
-
+      await subscribeToListPush(listId);
       onCreated(listId, listKey);
     } catch (e: any) {
       console.error(e);

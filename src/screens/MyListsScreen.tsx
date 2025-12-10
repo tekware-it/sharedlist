@@ -1,4 +1,5 @@
 // src/screens/MyListsScreen.tsx
+import { subscribeToListPush, unsubscribeFromListPush } from "../push/subscribe";
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -143,6 +144,14 @@ export const MyListsScreen: React.FC<Props> = ({
         const stored = await loadStoredLists();
         if (cancelled) return;
         setListsFromStored(stored);
+
+        // subscribe a tutte le liste salvate (idempotente, poche liste)
+        for (const l of stored) {
+          subscribeToListPush(l.listId).catch((e) =>
+            console.warn("[Push] subscribe initial failed", l.listId, e)
+          );
+        }
+
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -155,9 +164,29 @@ export const MyListsScreen: React.FC<Props> = ({
     };
   }, []);
 
+  useEffect(() => {
+    const unsub = syncEvents.subscribeHealth((ok) => {
+      setBackendOnline(ok);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    const unsub = syncEvents.subscribeListsChanged(async () => {
+      try {
+        const stored = await loadStoredLists();
+        setListsFromStored(stored);
+      } catch (e) {
+        console.log("Error refreshing lists on listsChanged", e);
+      }
+    });
+
+    return () => unsub();
+  }, []);
   //
   // 2) Poll di healthz + refresh delle liste (nomi + lastRemoteRev)
   //
+  /*
   useEffect(() => {
     let cancelled = false;
     let intervalId: any = null;
@@ -201,6 +230,8 @@ export const MyListsScreen: React.FC<Props> = ({
       if (intervalId) clearInterval(intervalId);
     };
   }, []);
+
+  */
 
   //
   // 3) Sync events: quando il worker sincronizza una lista, rileggo le liste locali
@@ -412,6 +443,9 @@ export const MyListsScreen: React.FC<Props> = ({
       // 3) salviamo davvero su AsyncStorage
       await saveStoredLists(updated);
 
+      // 3b) subscribe alle push di quella lista
+      await subscribeToListPush(listId);
+
       // 4) aggiorniamo lo stato in memoria
       setListsFromStored(updated);
 
@@ -497,6 +531,7 @@ export const MyListsScreen: React.FC<Props> = ({
           onPress: () => {
             (async () => {
               try {
+                await unsubscribeFromListPush(list.listId);
                 await removeStoredList(list.listId);
                 setLists((prev) =>
                   prev.filter((l) => l.listId !== list.listId)
@@ -522,6 +557,7 @@ export const MyListsScreen: React.FC<Props> = ({
                   listId: list.listId,
                   clientId,
                 });
+                await unsubscribeFromListPush(list.listId);
                 await removeStoredList(list.listId);
                 setLists((prev) =>
                   prev.filter((l) => l.listId !== list.listId)

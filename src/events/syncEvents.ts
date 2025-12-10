@@ -1,23 +1,72 @@
+// src/events/syncEvents.ts
 
 export type ListSyncedPayload = {
   listId: string;
 };
 
-type Handler = (payload: ListSyncedPayload) => void;
+type ListSyncedHandler = (payload: ListSyncedPayload) => void;
+type ListsChangedHandler = () => void;
+type HealthHandler = (ok: boolean) => void;
 
 class SyncEventBus {
-  private listeners: Handler[] = [];
+  // una lista specifica è stata sincronizzata
+  private listSyncedListeners: ListSyncedHandler[] = [];
 
-  subscribe(handler: Handler): () => void {
-    this.listeners.push(handler);
+  // qualcosa nello storage delle liste è cambiato (rileggi da AsyncStorage)
+  private listsChangedListeners: ListsChangedHandler[] = [];
+
+  // stato health del backend (true = online, false = offline)
+  private healthListeners: HealthHandler[] = [];
+
+  /**
+   * Sottoscrizione storica: eventi "listSynced".
+   * Rimane compatibile col codice esistente.
+   */
+  subscribe(handler: ListSyncedHandler): () => void {
+    this.listSyncedListeners.push(handler);
     return () => {
-      this.listeners = this.listeners.filter((h) => h !== handler);
+      this.listSyncedListeners = this.listSyncedListeners.filter(
+        (h) => h !== handler
+      );
     };
   }
 
   emitListSynced(listId: string) {
     const payload: ListSyncedPayload = { listId };
-    this.listeners.forEach((h) => h(payload));
+    this.listSyncedListeners.forEach((h) => h(payload));
+  }
+
+  /**
+   * Nuova API: eventi "listsChanged".
+   * Usala quando il worker aggiorna l'elenco delle liste
+   * (es. dopo runHealthAndSyncOnce + saveStoredLists).
+   */
+  subscribeListsChanged(handler: ListsChangedHandler): () => void {
+    this.listsChangedListeners.push(handler);
+    return () => {
+      this.listsChangedListeners = this.listsChangedListeners.filter(
+        (h) => h !== handler
+      );
+    };
+  }
+
+  emitListsChanged() {
+    this.listsChangedListeners.forEach((h) => h());
+  }
+
+  /**
+   * Nuova API: eventi di stato health del backend.
+   * Utile per aggiornare il pallino verde/rosso in MyListsScreen.
+   */
+  subscribeHealth(handler: HealthHandler): () => void {
+    this.healthListeners.push(handler);
+    return () => {
+      this.healthListeners = this.healthListeners.filter((h) => h !== handler);
+    };
+  }
+
+  emitHealth(ok: boolean) {
+    this.healthListeners.forEach((h) => h(ok));
   }
 }
 
