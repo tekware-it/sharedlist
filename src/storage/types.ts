@@ -5,4 +5,5 @@ export type StoredList = {
   lastSeenRev: number | null;
   lastRemoteRev: number | null;
   pendingCreate?: boolean;
+  removedFromServer?: boolean;
 };

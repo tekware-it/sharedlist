@@ -15,20 +15,20 @@ const PLACEHOLDER_NAME = "Lista importata";
 
 let foregroundIntervalId: any = null;
 
-/**
- * Esegue UNA iterazione di:
- *  - healthz
- *  - refresh delle liste (nome + lastRemoteRev + item nello storage)
- *
- * Ritorna i NOMI delle liste che hanno avuto una nuova rev remota,
- * per eventuali notifiche.
- */
+function isNotFoundError(e: unknown): boolean {
+  if (!e || typeof e !== "object") return false;
+  const msg = (e as any).message;
+  if (typeof msg !== "string") return false;
+  const lower = msg.toLowerCase();
+  return lower.includes("404") || lower.includes("not found");
+}
+
 export async function runHealthAndSyncOnce(): Promise<string[]> {
   console.log("[HealthSync] tick start");
   const changedListNames: string[] = [];
 
   try {
-      console.log("[HealthSync] calling apiHealthz()");
+    console.log("[HealthSync] calling apiHealthz()");
     const ok = await apiHealthz();
     console.log("[HealthSync] /healthz ->", ok);
     syncEvents.emitHealth(ok);
@@ -36,147 +36,164 @@ export async function runHealthAndSyncOnce(): Promise<string[]> {
     if (!ok) return [];
 
     const stored = await loadStoredLists();
-    console.log("[HealthSync] stored lists:", stored.length);
     if (!stored.length) return [];
-
-    const beforeRev = new Map<string, number | null>(
-      stored.map((l) => [l.listId, l.lastRemoteRev ?? null])
-    );
 
     let changed = false;
     const updated: StoredList[] = [];
 
     for (const l of stored) {
-      let newL: StoredList = { ...l };
+      let newL: StoredList = {
+        ...l,
+        removedFromServer: l.removedFromServer ?? false,
+      };
 
-      // 1) Nome placeholder -> prova a leggere la meta
-      if (!newL.name || newL.name === PLACEHOLDER_NAME) {
-        try {
-          const metaRes = await apiGetList(newL.listId);
-          const metaPlain = decryptJson<ListMeta>(
-            newL.listKey as ListKey,
-            metaRes.meta_ciphertext_b64,
-            metaRes.meta_nonce_b64
-          );
-          if (metaPlain?.name && metaPlain.name !== newL.name) {
-            console.log(
-              "[HealthSync] updated list name",
-              newL.listId,
-              "->",
-              metaPlain.name
-            );
-            newL.name = metaPlain.name;
-            changed = true;
-          }
-        } catch (e) {
-          console.warn(
-            "[HealthSync] unable to refresh list name",
-            newL.listId,
-            e
-          );
-        }
+      // lista mai sincronizzata (creata solo offline) → la lasciamo in pace
+      if (newL.pendingCreate) {
+        updated.push(newL);
+        continue;
       }
 
-      // 2) nuove rev / nuovi item
-      try {
-        const res = await apiFetchItems({
-          listId: newL.listId,
-          since_rev: newL.lastRemoteRev ?? undefined,
-        });
+      // Se la lista è già marcata come rimossa, non facciamo altre chiamate
+      if (!newL.removedFromServer) {
+        // 1) Aggiorno il nome se è un placeholder
+        if (!newL.name || newL.name === PLACEHOLDER_NAME) {
+          try {
+            const metaRes = await apiGetList(newL.listId);
+            const metaPlain = decryptJson<ListMeta>(
+              newL.listKey as ListKey,
+              metaRes.meta_ciphertext_b64,
+              metaRes.meta_nonce_b64
+            );
 
-        console.log(
-          "[HealthSync] list",
-          newL.listId,
-          "items fetched:",
-          res.items?.length ?? 0,
-          "latest_rev:",
-          res.latest_rev
-        );
+            if (metaPlain?.name && metaPlain.name !== newL.name) {
+              newL = {
+                ...newL,
+                name: metaPlain.name,
+                removedFromServer: false,
+              };
+              changed = true;
+            }
+          } catch (e) {
+            if (isNotFoundError(e)) {
+              // la lista non esiste più lato server
+              if (!newL.removedFromServer) {
+                newL = { ...newL, removedFromServer: true };
+                changed = true;
+              }
+              updated.push(newL);
+              continue; // niente fetchItems
+            } else {
+              console.warn(
+                "[HealthSync] unable to refresh meta for list",
+                newL.listId,
+                e
+              );
+            }
+          }
+        }
 
-        if (
-          typeof res.latest_rev === "number" &&
-          res.latest_rev !== newL.lastRemoteRev
-        ) {
-          // 2a) decripta e merge item nello storage locale
-          if (Array.isArray(res.items) && res.items.length > 0) {
+        // 2) Scarico gli item nuovi dal server (se la lista esiste)
+        if (!newL.removedFromServer) {
+          const since = (newL as any).lastRemoteRev ?? null;
+
+          try {
+            const res = await apiFetchItems({
+              listId: newL.listId,
+              since_rev: since ?? undefined,
+            });
+
             const snapshots: RemoteItemSnapshot[] = [];
 
-            for (const it of res.items) {
-              if (it.deleted) {
+            for (const it of res.items as any[]) {
+              if ((it as any).deleted) {
+                // item cancellato lato server
                 snapshots.push({
                   itemId: it.item_id,
                   label: "",
-                  flags: {} as any,
+                  flags: {
+                    checked: false,
+                    crossed: false,
+                    highlighted: false,
+                  },
                   deleted: true,
-                });
-                continue;
-              }
+                } as RemoteItemSnapshot);
+              } else {
+                try {
+                  const plain = decryptJson<ListItemPlain>(
+                    newL.listKey as ListKey,
+                    it.ciphertext_b64,
+                    it.nonce_b64
+                  );
 
-              try {
-                const plain = decryptJson<ListItemPlain>(
-                  newL.listKey as ListKey,
-                  it.ciphertext_b64,
-                  it.nonce_b64
-                );
-
-                snapshots.push({
-                  itemId: it.item_id,
-                  label: plain.label,
-                  flags: plain.flags,
-                });
-              } catch (e) {
-                console.warn(
-                  "[HealthSync] unable to decrypt remote item",
-                  it.item_id,
-                  e
-                );
+                  snapshots.push({
+                    itemId: it.item_id,
+                    label: plain.label,
+                    flags: plain.flags,
+                  } as RemoteItemSnapshot);
+                } catch (e) {
+                  console.warn(
+                    "[HealthSync] unable to decrypt remote item",
+                    it.item_id,
+                    e
+                  );
+                }
               }
             }
 
             if (snapshots.length > 0) {
               await mergeRemoteItemsIntoLocal(newL.listId, snapshots);
             }
-          }
 
-          // 2b) aggiorno lastRemoteRev (NON lastSeenRev)
-          const prev = beforeRev.get(newL.listId) ?? null;
-          newL.lastRemoteRev = res.latest_rev;
-          changed = true;
-
-          if (newL.lastRemoteRev != null && newL.lastRemoteRev !== prev) {
-            changedListNames.push(newL.name || "Lista");
+            if (
+              typeof res.latest_rev === "number" &&
+              res.latest_rev !== (newL as any).lastRemoteRev
+            ) {
+              newL = {
+                ...newL,
+                lastRemoteRev: res.latest_rev,
+                removedFromServer: false,
+              } as any;
+              changed = true;
+              changedListNames.push(newL.name ?? "Lista");
+            }
+          } catch (e) {
+              //console.warn("[HealthSync] loadStoredLists ", e?.message ?? e)
+            if (isNotFoundError(e)) {
+              ///console.warn("[HealthSync] isNotFoundError ", newL.removedFromServer)
+              if (!newL.removedFromServer) {
+                newL = { ...newL, removedFromServer: true };
+                newL.removedFromServer = true;
+                changed = true;
+              }
+              //console.warn("[HealthSync] saveStoredLists 2 ", newL.removedFromServer)
+            } else {
+              console.warn(
+                "[HealthSync] unable to refresh items for list",
+                newL.listId,
+                e
+              );
+            }
           }
         }
-      } catch (e) {
-        console.warn(
-          "[HealthSync] unable to refresh items/rev for list",
-          newL.listId,
-          e
-        );
       }
 
       updated.push(newL);
     }
 
     if (changed) {
+      //console.warn("[HealthSync] saveStoredLists ", newL.removedFromServer)
       await saveStoredLists(updated);
       syncEvents.emitListsChanged();
     }
 
-    console.log(
-      "[HealthSync] tick done, lists changed:",
-      changedListNames.length
-    );
     return changedListNames;
   } catch (e) {
     console.warn("[HealthSync] tick error", e);
+    syncEvents.emitHealth(false);
     return [];
   }
 }
 
-/**
- * Worker in foreground: gira con setInterval mentre l'app è aperta.
- */
 export async function startForegroundSyncWorker() {
   if (foregroundIntervalId) return;
 
@@ -187,12 +204,11 @@ export async function startForegroundSyncWorker() {
         ? settings.healthCheckIntervalMs
         : 30000;
 
-    // primo giro subito
     await runHealthAndSyncOnce();
 
     foregroundIntervalId = setInterval(() => {
-      runHealthAndSyncOnce().catch((e) =>
-        console.warn("[HealthSync] foreground tick error", e)
+      runHealthAndSyncOnce().catch((err) =>
+        console.warn("[HealthSync] foreground tick error", err)
       );
     }, intervalMs);
   } catch (e) {

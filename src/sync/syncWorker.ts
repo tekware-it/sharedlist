@@ -93,9 +93,13 @@ async function runSyncOnce() {
       } catch (e: any) {
         console.warn("Sync op failed", e?.message ?? e);
         const msg = String(e?.message ?? "");
+        //console.warn("Sync op msg", msg);
         if (msg.includes("Too many requests")) {
           // non intasiamo il server, fermiamo il batch
           break;
+        } else if (msg.includes("Item not found")) {
+            console.warn("Item not found", op.id );
+            processedIds.push(op.id);
         }
         // altri errori: lasciamo l'op in coda per riprovare più tardi
       }

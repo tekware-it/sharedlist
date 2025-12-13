@@ -47,6 +47,7 @@ import {
   type StoredItemPlain,
 } from "../storage/itemsStore";
 import Clipboard from "@react-native-clipboard/clipboard";
+import { syncEvents } from "../events/syncEvents";
 
 
 type Props = {
@@ -72,6 +73,8 @@ const fallbackFlagsDefinition: FlagsDefinition = {
 export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const [meta, setMeta] = useState<ListMeta | null>(null);
   const [items, setItems] = useState<ItemView[]>([]);
+  const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+
 
   const { orderedItems, firstCrossedIndex } = useMemo(() => {
     type Indexed = { it: ItemView; idx: number };
@@ -300,6 +303,74 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     };
   }, [listId, listKey]);
 
+  useEffect(() => {
+    const unsub = syncEvents.subscribeHealth((ok) => {
+      setBackendOnline(ok);
+    });
+    return () => unsub();
+  }, []);
+
+
+  // Quando runHealthAndSyncOnce aggiorna gli item nello storage,
+    // ricarichiamo gli item locali per questa lista.
+    useEffect(() => {
+      const unsubscribe = syncEvents.subscribeListsChanged(async () => {
+        try {
+          const stored = await loadStoredItems(listId);
+
+          setItems((prev) => {
+            // mappa degli item già presenti per id (per mantenere pendingCreate/pendingUpdate)
+            const existingById = new Map<number, ItemView>();
+            prev.forEach((it) => {
+              if (it.item_id != null) {
+                existingById.set(it.item_id, it);
+              }
+            });
+
+            const storedViews: ItemView[] = stored.map((s, idx) => {
+              const existing =
+                s.itemId != null ? existingById.get(s.itemId) : undefined;
+
+              return {
+                localId: existing?.localId ?? `store-${s.itemId ?? idx}`,
+                item_id: s.itemId,
+                plaintext: {
+                  label: s.label,
+                  flags: s.flags,
+                },
+                pendingCreate: existing?.pendingCreate ?? false,
+                pendingUpdate: existing?.pendingUpdate ?? false,
+                pendingOpId: existing?.pendingOpId,
+              };
+            });
+
+            // mantieni eventuali item ancora in queue (senza item_id)
+            const pendingOnly = prev.filter(
+              (it) => it.item_id == null && it.pendingCreate
+            );
+
+            return [...storedViews, ...pendingOnly];
+          });
+
+          // 2) marcare la rev remota come "vista" se questa lista è ancora presente
+          const lists = await loadStoredLists();
+          const current = lists.find((l) => l.listId === listId);
+          if (current?.lastRemoteRev != null) {
+            await updateLastSeenRev(listId, current.lastRemoteRev);
+          }
+        } catch (e) {
+          console.warn(
+            "[ListScreen] failed to refresh items after listsChanged",
+            e
+          );
+        }
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    }, [listId]);
+
   //
   // Evento globale: quando il worker sincronizza un item (create o update)
   //
@@ -382,6 +453,24 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     );
   }
 
+ function showBackendStatusToast() {
+   let message: string;
+
+   if (backendOnline === null) {
+     message = "Stato backend non ancora verificato.";
+   } else if (backendOnline) {
+     message = "Backend online: connessione OK.";
+   } else {
+     message = "Backend offline: nessuna sincronizzazione col server.";
+   }
+
+   if (Platform.OS === "android") {
+     ToastAndroid.show(message, ToastAndroid.LONG);
+   } else {
+     Alert.alert("Stato backend", message);
+   }
+ }
+
 
   function showPendingItemToast() {
     const message =
@@ -425,14 +514,39 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
         });
 
         setItems((prev) => {
-          const updated = [
-            ...prev,
-            {
-              localId: `srv-${created.item_id}`,
-              item_id: created.item_id,
-              plaintext: plain,
-            },
-          ];
+          const existingIndex = prev.findIndex(
+            (it) => it.item_id === created.item_id
+          );
+
+          let updated: ItemView[];
+
+          if (existingIndex >= 0) {
+            // Item già presente (es. arrivato via sync remoto): aggiorniamo solo i dati
+            updated = prev.map((it) =>
+              it.item_id === created.item_id
+                ? {
+                    ...it,
+                    plaintext: plain,
+                    pendingCreate: false,
+                    pendingUpdate: false,
+                    pendingOpId: undefined,
+                  }
+                : it
+            );
+          } else {
+            // Item non presente: lo aggiungiamo come nuovo
+            updated = [
+              ...prev,
+              {
+                localId: `srv-${created.item_id}`,
+                item_id: created.item_id,
+                plaintext: plain,
+                pendingCreate: false,
+                pendingUpdate: false,
+                pendingOpId: undefined,
+              },
+            ];
+          }
 
           const plainForStore: StoredItemPlain[] = updated
             .filter((it) => it.item_id != null && it.plaintext)
@@ -450,6 +564,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
         });
 
         await updateLastSeenRev(listId, created.rev);
+
       } catch (e: any) {
         console.warn("Create item failed, queueing for sync", e?.message ?? e);
 
@@ -769,6 +884,19 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           <Text style={styles.title}>{meta?.name ?? "Lista"}</Text>
 
           <View style={styles.headerActions}>
+            {/* pallino health a destra, prima delle icone */}
+                <TouchableOpacity
+                  style={styles.headerHealthDotButton}
+                  onPress={showBackendStatusToast}
+                >
+                  {backendOnline === null ? (
+                    <View style={styles.healthDotUnknown} />
+                  ) : backendOnline ? (
+                    <View style={styles.healthDotOnline} />
+                  ) : (
+                    <View style={styles.healthDotOffline} />
+                  )}
+                </TouchableOpacity>
             <TouchableOpacity
               style={styles.headerIconButton}
               onPress={handleCopyAsText}
@@ -917,6 +1045,40 @@ const styles = StyleSheet.create({
   },
   error: { color: "red" },
   emptyText: { fontSize: 14, color: "#666" },
+
+  headerTitleArea: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: "700",
+      marginRight: 8,
+    },
+    headerHealthDotButton: {
+        marginRight: 8,
+        paddingHorizontal: 4,
+        paddingVertical: 4,
+      },
+    healthDotOnline: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: "#2ecc71",
+    },
+    healthDotOffline: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: "#e74c3c",
+    },
+    healthDotUnknown: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: "#bdc3c7",
+    },
+
 
   itemRow: {
     flexDirection: "row",

@@ -25,6 +25,7 @@ export async function loadStoredLists(): Promise<StoredList[]> {
           lastSeenRev: lastSeen,
           lastRemoteRev: lastRemote,
           pendingCreate: !!l.pendingCreate,
+          removedFromServer: !!l.removedFromServer,
         } as StoredList;
       });
     } catch {

@@ -123,6 +123,7 @@ export const MyListsScreen: React.FC<Props> = ({
   const [importLinkText, setImportLinkText] = useState("");
 
   function computeHasRemoteChanges(l: StoredList): boolean {
+    if (l.removedFromServer) return false;
     if (l.lastRemoteRev == null) return false;
     if (l.lastSeenRev == null) return true; // mai vista → consideriamo "da leggere"
     return l.lastRemoteRev > l.lastSeenRev;
@@ -183,55 +184,6 @@ export const MyListsScreen: React.FC<Props> = ({
 
     return () => unsub();
   }, []);
-  //
-  // 2) Poll di healthz + refresh delle liste (nomi + lastRemoteRev)
-  //
-  /*
-  useEffect(() => {
-    let cancelled = false;
-    let intervalId: any = null;
-
-    async function checkHealthAndMaybeRefresh() {
-      try {
-        const ok = await apiHealthz();
-        if (!cancelled) setBackendOnline(ok);
-
-        if (ok && !cancelled) {
-          await refreshListsFromServerOnHealth();
-        }
-      } catch (e) {
-        if (!cancelled) setBackendOnline(false);
-      }
-    }
-
-    async function setup() {
-      try {
-        const settings = await loadSettings();
-        const intervalMs =
-          settings.healthCheckIntervalMs && settings.healthCheckIntervalMs > 0
-            ? settings.healthCheckIntervalMs
-            : 30000;
-
-        await checkHealthAndMaybeRefresh();
-
-        if (!cancelled) {
-          intervalId = setInterval(checkHealthAndMaybeRefresh, intervalMs);
-        }
-      } catch (e) {
-        console.warn("Failed to setup health polling", e);
-        await checkHealthAndMaybeRefresh();
-      }
-    }
-
-    setup();
-
-    return () => {
-      cancelled = true;
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, []);
-
-  */
 
   //
   // 3) Sync events: quando il worker sincronizza una lista, rileggo le liste locali
@@ -469,6 +421,21 @@ export const MyListsScreen: React.FC<Props> = ({
   // - il pallino sparisce (hasRemoteChanges diventa false)
   //
   async function handleOpenList(list: ListWithStatus) {
+    if (list.removedFromServer) {
+        Alert.alert(
+          "Lista rimossa dal server",
+          "Questa lista non esiste più sul server. Puoi ancora vedere i dati salvati localmente, " +
+            "ma non verrà più sincronizzata.",
+          [
+            { text: "Annulla", style: "cancel" },
+            {
+              text: "Apri comunque",
+              onPress: () => onSelectList(list.listId, list.listKey),
+            },
+          ]
+        );
+        return;
+      }
     try {
       const stored = await loadStoredLists();
       const updated: StoredList[] = stored.map((l) =>
@@ -641,11 +608,24 @@ export const MyListsScreen: React.FC<Props> = ({
                 style={styles.listRowText}
                 onPress={() => handleOpenList(item)}
               >
-                <Text style={styles.listName}>{item.name}</Text>
-                <Text style={styles.listId}>{item.listId}</Text>
+                <Text
+                    style={[
+                      styles.listName,
+                      item.removedFromServer && styles.listNameRemoved,
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                {item.removedFromServer && (
+                    <Text style={styles.listRemovedLabel}>Rimossa dal server</Text>
+                  )}
+
+                {!item.removedFromServer && (
+                    <Text style={styles.listId}>{item.listId}</Text>
+                   )}
               </TouchableOpacity>
 
-              {item.hasRemoteChanges && <View style={styles.badge} />}
+              {item.hasRemoteChanges && !item.removedFromServer && <View style={styles.badge} />}
 
               {item.pendingCreate && (
                 <TouchableOpacity
@@ -732,6 +712,16 @@ export const MyListsScreen: React.FC<Props> = ({
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 48, paddingHorizontal: 16 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
+
+   listNameRemoved: {
+     color: "#999",
+     textDecorationLine: "line-through",
+   },
+
+   listRemovedLabel: {
+     fontSize: 11,
+     color: "#e74c3c",
+   },
 
   headerRow: {
     flexDirection: "row",

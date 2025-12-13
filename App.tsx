@@ -5,6 +5,7 @@ import {
   View,
   Text,
   BackHandler,
+  AppState,
 } from "react-native";
 import { Linking } from "react-native";
 
@@ -15,6 +16,11 @@ import { parseSharedListUrl } from "./src/linking/sharedListLink";
 import { upsertStoredList } from "./src/storage/listsStore";
 import { startSyncWorker } from "./src/sync/syncWorker";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
+import {
+  startForegroundSyncWorker,
+  stopForegroundSyncWorker,
+} from "./src/sync/healthAndSyncWorker";
+
 
 import "react-native-get-random-values";
 
@@ -91,6 +97,40 @@ export default function App() {
   useEffect(() => {
     startSyncWorker();
   }, []);
+
+  // worker per health+sync remoto (pull ← server) mentre l'app è attiva
+    useEffect(() => {
+      let currentState: AppStateStatus = AppState.currentState;
+
+      const handleAppStateChange = async (nextState: AppStateStatus) => {
+        if (nextState === currentState) return;
+        currentState = nextState;
+
+        if (nextState === "active") {
+          // app in foreground → avvia il worker
+          try {
+            await startForegroundSyncWorker();
+          } catch (e) {
+            console.warn("[App] startForegroundSyncWorker failed", e);
+          }
+        } else if (nextState === "background" || nextState === "inactive") {
+          // app in background → ferma il worker (in BG ci pensa FCM)
+          stopForegroundSyncWorker();
+        }
+      };
+
+      const sub = AppState.addEventListener("change", handleAppStateChange);
+
+      // primo avvio: se siamo già in active
+      startForegroundSyncWorker().catch((e) =>
+        console.warn("[App] initial startForegroundSyncWorker failed", e)
+      );
+
+      return () => {
+        sub.remove();
+        stopForegroundSyncWorker();
+      };
+    }, []);
 
   useEffect(() => {
       function handleUrl(url: string | null) {
