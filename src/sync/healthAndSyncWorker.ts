@@ -15,6 +15,40 @@ const PLACEHOLDER_NAME = "Lista importata";
 
 let foregroundIntervalId: any = null;
 
+const HEALTHZ_TIMEOUT_MS = 3000;
+
+/**
+ * Esegue apiHealthz ma con un timeout "aggressivo".
+ * Se il server non risponde entro HEALTHZ_TIMEOUT_MS, ritorna false.
+ */
+async function healthzWithTimeout(): Promise<boolean> {
+  try {
+    const p = apiHealthz();
+
+    // Evita "Unhandled promise rejection" quando il fetch fallisce *dopo* il timeout
+    p.catch((err) => {
+      console.log("[HealthSync] apiHealthz late error:", err);
+    });
+
+    return await Promise.race<boolean>([
+      p,
+      new Promise<boolean>((resolve) =>
+        setTimeout(() => {
+          console.log(
+            "[HealthSync] /healthz timeout dopo",
+            HEALTHZ_TIMEOUT_MS,
+            "ms, considero offline"
+          );
+          resolve(false);
+        }, HEALTHZ_TIMEOUT_MS)
+      ),
+    ]);
+  } catch (e) {
+    console.warn("[HealthSync] apiHealthz error:", e);
+    return false;
+  }
+}
+
 function isNotFoundError(e: unknown): boolean {
   if (!e || typeof e !== "object") return false;
   const msg = (e as any).message;
@@ -29,11 +63,15 @@ export async function runHealthAndSyncOnce(): Promise<string[]> {
 
   try {
     console.log("[HealthSync] calling apiHealthz()");
-    const ok = await apiHealthz();
+    const ok = await healthzWithTimeout();
     console.log("[HealthSync] /healthz ->", ok);
     syncEvents.emitHealth(ok);
 
-    if (!ok) return [];
+    if (!ok) {
+      console.log("[HealthSync] backend offline, salto la sync delle liste");
+      return [];
+    }
+
 
     const stored = await loadStoredLists();
     if (!stored.length) return [];

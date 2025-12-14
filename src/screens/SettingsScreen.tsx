@@ -94,6 +94,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
 
   //
   // TEST dell'URL backend (per la dialog "Server")
+  // con debounce + timeout del fetch
   //
   useEffect(() => {
     if (activeDialog !== "server") return;
@@ -107,19 +108,44 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
     let cancelled = false;
     setBackendTestStatus("testing");
 
+    const TEST_TIMEOUT_MS = 3000; // ad es. 3 secondi
+
     const handle = setTimeout(() => {
       (async () => {
         try {
           const base = url.replace(/\/+$/, "");
-          const res = await fetch(base + "/healthz");
+          const healthzUrl = base + "/healthz";
+
+          // fetch con timeout tramite Promise.race
+          const p = fetch(healthzUrl);
+
+          // evita "Unhandled promise rejection" se il fetch fallisce dopo il timeout
+          p.catch((err) => {
+            console.log("[Settings] /healthz late error:", err);
+          });
+
+          const ok = await Promise.race<boolean>([
+            p.then((res) => res.ok),
+            new Promise<boolean>((resolve) =>
+              setTimeout(() => {
+                console.log(
+                  "[Settings] /healthz timeout dopo",
+                  TEST_TIMEOUT_MS,
+                  "ms"
+                );
+                resolve(false);
+              }, TEST_TIMEOUT_MS)
+            ),
+          ]);
+
           if (cancelled) return;
-          if (res.ok) {
-            setBackendTestStatus("online");
-          } else {
+
+          setBackendTestStatus(ok ? "online" : "offline");
+        } catch (e) {
+          if (!cancelled) {
+            console.warn("[Settings] /healthz error:", e);
             setBackendTestStatus("offline");
           }
-        } catch (e) {
-          if (!cancelled) setBackendTestStatus("offline");
         }
       })();
     }, 600); // piccolo debounce per non martellare il server
