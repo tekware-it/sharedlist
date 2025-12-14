@@ -135,7 +135,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const listKey: ListKey = listKeyParam;
 
   //
-  // Caricamento iniziale: online se possibile, altrimenti fallback offline
+  // Caricamento iniziale
   //
   useEffect(() => {
     let cancelled = false;
@@ -144,155 +144,155 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       setLoading(true);
       setError(null);
 
+      //
+      // 1) OFFLINE-FIRST: mostra subito ciò che hai in locale
+      //
       try {
-        try {
-          // --- TENTATIVO ONLINE ---
-          const metaRes = await apiGetList(listId);
-          if (cancelled) return;
+        // 1.1 Meta offline: usa StoredList per il nome
+        const storedLists = await loadStoredLists();
+        if (cancelled) return;
 
-          const metaPlain = decryptJson<ListMeta>(
-            listKey,
-            metaRes.meta_ciphertext_b64,
-            metaRes.meta_nonce_b64
-          );
-          setMeta(metaPlain);
+        const foundList = storedLists.find((l) => l.listId === listId);
+        const offlineMeta: ListMeta = {
+          name: foundList?.name ?? "Lista offline",
+          flagsDefinition: fallbackFlagsDefinition,
+        };
+        setMeta(offlineMeta);
 
-          const itemsRes = await apiFetchItems({ listId });
-          if (cancelled) return;
+        // 1.2 Item cache-izzati localmente
+        const storedItems = await loadStoredItems(listId);
+        if (cancelled) return;
 
-          const plainForStore: StoredItemPlain[] = [];
-          const serverItems: ItemView[] = itemsRes.items.map((it) => {
-            try {
-              const plain = decryptJson<ListItemPlain>(
-                listKey,
-                it.ciphertext_b64,
-                it.nonce_b64
-              );
-              plainForStore.push({
-                itemId: it.item_id,
-                label: plain.label,
-                flags: plain.flags,
-              });
-              return {
-                localId: `srv-${it.item_id}`,
-                item_id: it.item_id,
-                plaintext: plain,
-              };
-            } catch {
-              return {
-                localId: `srv-${it.item_id}`,
-                item_id: it.item_id,
-                plaintext: null,
-              };
-            }
-          });
+        const localItems: ItemView[] = storedItems.map((it, idx) => ({
+          localId:
+            it.itemId != null ? `cache-${it.itemId}` : `cache-local-${idx}`,
+          item_id: it.itemId,
+          plaintext: {
+            label: it.label,
+            flags: it.flags,
+          },
+        }));
 
-          await saveStoredItems(listId, plainForStore);
+        // 1.3 Item pending dalla queue (⏳)
+        const queue = await loadQueue();
+        if (cancelled) return;
 
-          const queue = await loadQueue();
-          if (cancelled) return;
+        const pendingOps = queue.filter(
+          (op) => op.type === "create_item" && op.listId === listId
+        ) as PendingCreateItemOp[];
 
-          const pendingOps = queue.filter(
-            (op) => op.type === "create_item" && op.listId === listId
-          ) as PendingCreateItemOp[];
-
-          const pendingItems: ItemView[] = pendingOps.map((op) => {
-            let plain: ListItemPlain | null = null;
-            try {
-              plain = decryptJson<ListItemPlain>(
-                listKey,
-                op.ciphertextB64,
-                op.nonceB64
-              );
-            } catch {
-              plain = null;
-            }
-            return {
-              localId: `q-${op.id}`,
-              item_id: null,
-              plaintext: plain,
-              pendingCreate: true,
-              pendingOpId: op.id,
-            };
-          });
-
-          if (cancelled) return;
-          setItems([...serverItems, ...pendingItems]);
-        } catch (e: any) {
-          // --- FALLBACK OFFLINE ---
-          const msg = String(e?.message ?? "");
-          // Se è un errore HTTP vero (404/500...), lo propaghiamo
-          if (msg.startsWith("HTTP ")) {
-            throw e;
+        const pendingItems: ItemView[] = pendingOps.map((op) => {
+          let plain: ListItemPlain | null = null;
+          try {
+            plain = decryptJson<ListItemPlain>(
+              listKey,
+              op.ciphertextB64,
+              op.nonceB64
+            );
+          } catch {
+            plain = null;
           }
-
-          console.warn("Remote load failed, trying offline data", e);
-
-          // 1) Meta offline: usa StoredList per il nome
-          const storedLists = await loadStoredLists();
-          if (cancelled) return;
-
-          const foundList = storedLists.find((l) => l.listId === listId);
-          const offlineMeta: ListMeta = {
-            name: foundList?.name ?? "Lista offline",
-            flagsDefinition: fallbackFlagsDefinition,
+          return {
+            localId: `q-${op.id}`,
+            item_id: null,
+            plaintext: plain,
+            pendingCreate: true,
+            pendingOpId: op.id,
           };
-          setMeta(offlineMeta);
+        });
 
-          // 2) Item cache-izzati localmente
-          const storedItems = await loadStoredItems(listId);
-          if (cancelled) return;
-
-          const serverItems: ItemView[] = storedItems.map((it, idx) => ({
-            localId:
-              it.itemId != null
-                ? `cache-${it.itemId}`
-                : `cache-local-${idx}`,
-            item_id: it.itemId,
-            plaintext: {
-              label: it.label,
-              flags: it.flags,
-            },
-          }));
-
-          // 3) Item pending dalla queue (⏳)
-          const queue = await loadQueue();
-          if (cancelled) return;
-
-          const pendingOps = queue.filter(
-            (op) => op.type === "create_item" && op.listId === listId
-          ) as PendingCreateItemOp[];
-
-          const pendingItems: ItemView[] = pendingOps.map((op) => {
-            let plain: ListItemPlain | null = null;
-            try {
-              plain = decryptJson<ListItemPlain>(
-                listKey,
-                op.ciphertextB64,
-                op.nonceB64
-              );
-            } catch {
-              plain = null;
-            }
-            return {
-              localId: `q-${op.id}`,
-              item_id: null,
-              plaintext: plain,
-              pendingCreate: true,
-              pendingOpId: op.id,
-            };
-          });
-
-          if (cancelled) return;
-          setItems([...serverItems, ...pendingItems]);
-        }
-      } catch (e: any) {
-        console.error(e);
-        if (!cancelled) {
-          setError(e?.message ?? "Errore nel caricamento della lista");
-        }
+        if (cancelled) return;
+        setItems([...localItems, ...pendingItems]);
+      } catch (e) {
+        console.warn("[ListScreen] offline load failed", e);
       } finally {
+        // comunque togliamo lo spinner dopo l’offline
         if (!cancelled) setLoading(false);
+      }
+
+      //
+      // 2) ONLINE REFRESH in background: se va, rimpiazza i dati locali
+      //
+      try {
+        const metaRes = await apiGetList(listId);
+        if (cancelled) return;
+
+        const metaPlain = decryptJson<ListMeta>(
+          listKey,
+          metaRes.meta_ciphertext_b64,
+          metaRes.meta_nonce_b64
+        );
+        setMeta(metaPlain);
+
+        const itemsRes = await apiFetchItems({ listId });
+        if (cancelled) return;
+
+        const plainForStore: StoredItemPlain[] = [];
+        const serverItems: ItemView[] = itemsRes.items.map((it) => {
+          try {
+            const plain = decryptJson<ListItemPlain>(
+              listKey,
+              it.ciphertext_b64,
+              it.nonce_b64
+            );
+            plainForStore.push({
+              itemId: it.item_id,
+              label: plain.label,
+              flags: plain.flags,
+            });
+            return {
+              localId: `srv-${it.item_id}`,
+              item_id: it.item_id,
+              plaintext: plain,
+            };
+          } catch {
+            return {
+              localId: `srv-${it.item_id}`,
+              item_id: it.item_id,
+              plaintext: null,
+            };
+          }
+        });
+
+        // pending ⏳ ancora dalla queue (magari nel frattempo ne hai aggiunti altri)
+        const queue2 = await loadQueue();
+        if (cancelled) return;
+
+        const pendingOps2 = queue2.filter(
+          (op) => op.type === "create_item" && op.listId === listId
+        ) as PendingCreateItemOp[];
+
+        const pendingItems2: ItemView[] = pendingOps2.map((op) => {
+          let plain: ListItemPlain | null = null;
+          try {
+            plain = decryptJson<ListItemPlain>(
+              listKey,
+              op.ciphertextB64,
+              op.nonceB64
+            );
+          } catch {
+            plain = null;
+          }
+          return {
+            localId: `q-${op.id}`,
+            item_id: null,
+            plaintext: plain,
+            pendingCreate: true,
+            pendingOpId: op.id,
+          };
+        });
+
+        if (cancelled) return;
+        setItems([...serverItems, ...pendingItems2]);
+
+        // aggiorniamo la cache locale con la versione più recente
+        saveStoredItems(listId, plainForStore).catch((err) =>
+          console.warn("saveStoredItems after online refresh failed", err)
+        );
+      } catch (e: any) {
+        console.warn("[ListScreen] online refresh failed", e);
+        // se vuoi, qui puoi fare setError("Impossibile contattare il server");
+        // ma NON rimettiamo lo spinner: l'utente vede i dati offline.
       }
     }
 
@@ -302,6 +302,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       cancelled = true;
     };
   }, [listId, listKey]);
+
 
   useEffect(() => {
     const unsub = syncEvents.subscribeHealth((ok) => {
