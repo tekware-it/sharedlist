@@ -4,6 +4,8 @@ import messaging from "@react-native-firebase/messaging";
 import { listTopic } from "./topics";
 import { getClientId } from "../storage/clientId";
 import { getBaseUrl } from "../api/client"; // vedi sotto, deve essere esportata
+import { loadStoredLists } from "../storage/listsStore";
+
 
 export async function subscribeToListPush(listId: string) {
   if (!listId) return;
@@ -89,5 +91,27 @@ export async function unsubscribeFromListPush(listId: string) {
     } catch (e) {
       console.warn("[Push] iOS unsubscribe error", e);
     }
+  }
+}
+
+export async function unsubscribeFromAllListsPush(): Promise<void> {
+  try {
+    const lists = await loadStoredLists();
+    for (const l of lists) {
+      await unsubscribeFromListPush(l.listId);
+    }
+  } catch (e) {
+    console.warn("[Push] unsubscribeFromAllListsPush error", e);
+  }
+}
+
+export async function subscribeToAllStoredListsPush(): Promise<void> {
+  try {
+    const lists = await loadStoredLists();
+    for (const l of lists) {
+      await subscribeToListPush(l.listId);
+    }
+  } catch (e) {
+    console.warn("[Push] subscribeToAllStoredListsPush error", e);
   }
 }

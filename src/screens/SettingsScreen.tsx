@@ -14,13 +14,20 @@ import {
   ToastAndroid,
   Modal,
   BackHandler,
+  Switch,
 } from "react-native";
 import {
   loadSettings,
   saveSettings,
   DEFAULT_BACKEND_URL,
   DEFAULT_HEALTH_INTERVAL_MS,
+  type Settings,
 } from "../storage/settingsStore";
+import {
+  unsubscribeFromAllListsPush,
+  subscribeToAllStoredListsPush,
+} from "../push/subscribe";
+
 
 type Props = {
   onClose: () => void;
@@ -35,7 +42,9 @@ type BackendTestStatus = "idle" | "testing" | "online" | "offline";
 export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
   const [backendUrl, setBackendUrl] = useState("");
   const [healthIntervalSec, setHealthIntervalSec] = useState("30");
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notifDialogVisible, setNotifDialogVisible] = useState(false);
 
   const [activeDialog, setActiveDialog] = useState<ActiveDialog>("none");
   const [editBackendUrl, setEditBackendUrl] = useState("");
@@ -44,28 +53,23 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
   const [backendTestStatus, setBackendTestStatus] =
     useState<BackendTestStatus>("idle");
 
-  // carica le impostazioni una volta sola
   useEffect(() => {
     let cancelled = false;
-
-    async function load() {
-      setLoading(true);
+    (async () => {
       try {
         const s = await loadSettings();
-        if (cancelled) return;
-        setBackendUrl(s.backendUrl);
-        setHealthIntervalSec(
-          String(Math.round(s.healthCheckIntervalMs / 1000))
-        );
-      } catch (e) {
-        console.warn("Failed to load settings", e);
+        if (!cancelled) {
+          setSettings(s);
+          // allinea gli state locali ai valori caricati
+          setBackendUrl(s.backendUrl);
+          setHealthIntervalSec(
+            String(Math.round(s.healthCheckIntervalMs / 1000))
+          );
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
-    }
-
-    load();
-
+    })();
     return () => {
       cancelled = true;
     };
@@ -199,10 +203,26 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
     });
   }
 
+  async function applySettingsAndMaybeResub(patch: Partial<Settings>) {
+      const next = await saveSettings(patch);
+      setSettings(next);
+
+      // se entrambi falsi -> unsubscribe da tutte le liste
+      if (!next.notificationsEnabled && !next.backgroundSyncEnabled) {
+        await unsubscribeFromAllListsPush();
+      } else {
+        // almeno uno true -> assicuriamoci che siamo iscritti alle liste
+        await subscribeToAllStoredListsPush();
+      }
+    }
+
+  const openNotifDialog = () => setNotifDialogVisible(true);
+  const closeNotifDialog = () => setNotifDialogVisible(false);
+
   //
   // UI principale
   //
-  if (loading) {
+  if (loading || !settings) {
     return (
       <View style={styles.center}>
         <ActivityIndicator />
@@ -237,10 +257,12 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleNotifications}>
+        <TouchableOpacity onPress={openNotifDialog}>
           <View style={styles.row}>
             <Text style={styles.rowTitle}>Notifiche</Text>
-            <Text style={styles.rowValueMuted}>Presto disponibile</Text>
+            <Text style={styles.rowDescription}>
+              Gestisci notifiche push e aggiornamento liste in background.
+            </Text>
           </View>
         </TouchableOpacity>
 
@@ -359,6 +381,60 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
           </View>
         </View>
       </Modal>
+      {/* Dialog Notifiche */}
+      <Modal
+          transparent
+          visible={notifDialogVisible}
+          animationType="fade"
+          onRequestClose={closeNotifDialog}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Notifiche</Text>
+
+              <View style={styles.modalRow}>
+                <View style={styles.modalRowText}>
+                  <Text style={styles.rowLabel}>Abilita notifiche</Text>
+                  <Text style={styles.rowDescription}>
+                    Mostra notifiche quando una lista condivisa viene modificata.
+                  </Text>
+                </View>
+                <Switch
+                  value={settings.notificationsEnabled}
+                  onValueChange={(value) =>
+                    applySettingsAndMaybeResub({ notificationsEnabled: value })
+                  }
+                />
+              </View>
+
+              <View style={styles.modalRow}>
+                <View style={styles.modalRowText}>
+                  <Text style={styles.rowLabel}>Aggiorna liste in background</Text>
+                  <Text style={styles.rowDescription}>
+                    Sincronizza le liste anche a app chiusa. Se disattivi entrambe
+                    le opzioni, gli aggiornamenti avvengono solo quando apri l&apos;app.
+                  </Text>
+                </View>
+                <Switch
+                  value={settings.backgroundSyncEnabled}
+                  onValueChange={(value) =>
+                    applySettingsAndMaybeResub({ backgroundSyncEnabled: value })
+                  }
+                  //disabled={!settings.notificationsEnabled}
+                />
+              </View>
+
+              <View style={styles.modalButtonsRow}>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={closeNotifDialog}
+                >
+                  <Text style={styles.modalButtonText}>Chiudi</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
     </View>
   );
 };
@@ -417,6 +493,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 12,
   },
+  rowLabel: {
+      fontSize: 14,
+      fontWeight: "600",
+      marginBottom: 12,
+    },
   modalInput: {
     borderWidth: 1,
     borderRadius: 6,
@@ -458,6 +539,21 @@ const styles = StyleSheet.create({
     color: "#444",
     marginLeft: 6,
   },
+
+  modalRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 8,
+    },
+    modalRowText: {
+      flex: 1,
+      paddingRight: 8,
+    },
+    modalButtonsRow: {
+      marginTop: 16,
+      flexDirection: "row",
+      justifyContent: "flex-end",
+    },
 
   dotOnline: {
     width: 10,

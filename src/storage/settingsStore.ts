@@ -4,6 +4,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export type AppSettings = {
   backendUrl: string;
   healthCheckIntervalMs: number;
+  notificationsEnabled: boolean;
+  backgroundSyncEnabled: boolean;
 };
 
 const SETTINGS_KEY = "sharedlist.settings";
@@ -17,6 +19,8 @@ export const DEFAULT_HEALTH_INTERVAL_MS = 3000;
 const DEFAULT_SETTINGS: AppSettings = {
   backendUrl: DEFAULT_BACKEND_URL,
   healthCheckIntervalMs: DEFAULT_HEALTH_INTERVAL_MS,
+  notificationsEnabled: true,
+  backgroundSyncEnabled: true,
 };
 
 export async function loadSettings(): Promise<AppSettings> {
@@ -25,9 +29,14 @@ export async function loadSettings(): Promise<AppSettings> {
   try {
     const parsed = JSON.parse(raw) as Partial<AppSettings>;
     return {
+      ...DEFAULT_SETTINGS,
       backendUrl: parsed.backendUrl ?? DEFAULT_BACKEND_URL,
       healthCheckIntervalMs:
         parsed.healthCheckIntervalMs ?? DEFAULT_HEALTH_INTERVAL_MS,
+      notificationsEnabled:
+        parsed.notificationsEnabled ?? DEFAULT_SETTINGS.notificationsEnabled,
+      backgroundSyncEnabled:
+        parsed.backgroundSyncEnabled ?? DEFAULT_SETTINGS.backgroundSyncEnabled,
     };
   } catch {
     return DEFAULT_SETTINGS;
