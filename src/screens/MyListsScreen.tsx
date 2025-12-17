@@ -1,6 +1,7 @@
 // src/screens/MyListsScreen.tsx
 import { subscribeToListPush, unsubscribeFromListPush } from "../push/subscribe";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   View,
   Text,
@@ -41,7 +42,7 @@ import { loadSettings } from "../storage/settingsStore";
 import { decryptJson, type ListKey } from "../crypto/e2e";
 import type { ListMeta } from "../models/list";
 
-const PLACEHOLDER_NAME = "Lista importata";
+const PLACEHOLDER_NAME = "Lista importata"; // sentinel nello storage (non tradurre)
 
 type ListWithStatus = StoredList & { hasRemoteChanges: boolean };
 
@@ -57,7 +58,7 @@ function parseSharedListDeepLink(text: string): {
 } {
   const trimmed = text.trim();
   if (!trimmed) {
-    throw new Error("Nessun link inserito");
+    throw new Error("ERR_EMPTY");
   }
 
   // Se l'utente incolla un testo lungo, estraiamo solo la prima occorrenza di sharedlist://...
@@ -65,7 +66,7 @@ function parseSharedListDeepLink(text: string): {
   const urlStr = match ? match[0] : trimmed;
 
   if (!urlStr.toLowerCase().startsWith("sharedlist://")) {
-    throw new Error("Link non valido: deve iniziare con sharedlist://");
+    throw new Error("ERR_SCHEME");
   }
 
   // Togliamo lo schema "sharedlist://"
@@ -78,17 +79,17 @@ function parseSharedListDeepLink(text: string): {
   const segments = pathPart.split("/").filter(Boolean); // es. ["l", "<listId>"]
 
   if (segments.length < 2) {
-    throw new Error("Link incompleto: mancano parti del percorso");
+    throw new Error("ERR_INCOMPLETE_PATH");
   }
 
   const first = segments[0];
   if (first !== "l") {
-    throw new Error("Link non riconosciuto: percorso non inizia con /l/");
+    throw new Error("ERR_BAD_PREFIX");
   }
 
   const listId = segments.slice(1).join("/"); // in pratica il resto dopo "l/"
   if (!listId) {
-    throw new Error("Link incompleto: ID lista mancante");
+    throw new Error("ERR_MISSING_ID");
   }
 
   // Parse molto semplice della query: cerchiamo k=<chiave>
@@ -105,10 +106,30 @@ function parseSharedListDeepLink(text: string): {
   }
 
   if (!listKey) {
-    throw new Error("Link incompleto: chiave k mancante");
+    throw new Error("ERR_MISSING_KEY");
   }
 
   return { listId, listKey };
+}
+
+
+function mapDeepLinkErrorToMessage(code: string | undefined, t: (k: string, o?: any) => string) {
+  switch (code) {
+    case "ERR_EMPTY":
+      return t("myLists.link_err_empty");
+    case "ERR_SCHEME":
+      return t("myLists.link_err_scheme");
+    case "ERR_INCOMPLETE_PATH":
+      return t("myLists.link_err_incomplete_path");
+    case "ERR_BAD_PREFIX":
+      return t("myLists.link_err_bad_prefix");
+    case "ERR_MISSING_ID":
+      return t("myLists.link_err_missing_id");
+    case "ERR_MISSING_KEY":
+      return t("myLists.link_err_missing_key");
+    default:
+      return t("myLists.invalid_link_generic");
+  }
 }
 
 export const MyListsScreen: React.FC<Props> = ({
@@ -116,6 +137,8 @@ export const MyListsScreen: React.FC<Props> = ({
   onCreateNewList,
   onOpenSettings,
 }) => {
+  const { t } = useTranslation();
+
   const [lists, setLists] = useState<ListWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
@@ -409,8 +432,8 @@ export const MyListsScreen: React.FC<Props> = ({
       onSelectList(listId, listKey);
     } catch (e: any) {
       Alert.alert(
-        "Link non valido",
-        e?.message ?? "Impossibile leggere il link incollato"
+        t("myLists.invalid_link_title"),
+        mapDeepLinkErrorToMessage(e?.message, t)
       );
     }
   }
@@ -422,12 +445,9 @@ export const MyListsScreen: React.FC<Props> = ({
   //
   async function handleOpenList(list: ListWithStatus) {
     if (list.removedFromServer) {
-        Alert.alert(
-          "Lista rimossa dal server",
-          "Questa lista non esiste più sul server. Puoi ancora vedere i dati salvati localmente, " +
-            "ma non verrà più sincronizzata.",
+        Alert.alert(t("myLists.removed_from_server"),
           [
-            { text: "Annulla", style: "cancel" },
+            { text: t("common.cancel"), style: "cancel" },
             {
               text: "Apri comunque",
               onPress: () => onSelectList(list.listId, list.listKey),
@@ -463,37 +483,36 @@ export const MyListsScreen: React.FC<Props> = ({
     let message: string;
 
     if (backendOnline === null) {
-      message = "Stato backend non ancora verificato.";
+      message = t("myLists.backend_status_unknown");
     } else if (backendOnline) {
-      message = "Backend online: connessione OK.";
+      message = t("myLists.backend_status_online");
     } else {
-      message = "Backend offline: nessuna sincronizzazione col server.";
+      message = t("myLists.backend_status_offline");
     }
 
     if (Platform.OS === "android") {
       ToastAndroid.show(message, ToastAndroid.LONG);
     } else {
-      Alert.alert("Stato backend", message);
+      Alert.alert(t("myLists.backend_status_title"), message);
     }
   }
 
   function showPendingStatusToast() {
-    const message =
-      "Lista non sincronizzata: sarà inviata al server quando è online.";
+    const message = t("myLists.pending_toast_msg");
     if (Platform.OS === "android") {
       ToastAndroid.show(message, ToastAndroid.LONG);
     } else {
-      Alert.alert("In attesa di sincronizzazione", message);
+      Alert.alert(t("myLists.pending_toast_title"), message);
     }
   }
 
   function confirmDelete(list: ListWithStatus) {
     Alert.alert(
-      "Gestisci lista",
-      `Che cosa vuoi fare con "${list.name}"?`,
+      t("myLists.manage_list_title"),
+      t("myLists.manage_list_msg", { name: list.name }),
       [
         {
-          text: "Rimuovi per me",
+          text: t("myLists.remove_local"),
           style: "destructive",
           onPress: () => {
             (async () => {
@@ -506,15 +525,15 @@ export const MyListsScreen: React.FC<Props> = ({
               } catch (e) {
                 console.error(e);
                 Alert.alert(
-                  "Errore",
-                  "Non sono riuscito a rimuovere la lista dal dispositivo."
+                  t("common.error_title"),
+                  t("myLists.remove_local_err")
                 );
               }
             })();
           },
         },
         {
-          text: "Rimuovi dal server",
+          text: t("myLists.remove_server"),
           style: "destructive",
           onPress: () => {
             (async () => {
@@ -532,16 +551,15 @@ export const MyListsScreen: React.FC<Props> = ({
               } catch (e: any) {
                 console.error(e);
                 Alert.alert(
-                  "Errore",
-                  e?.message ??
-                    "Non sono riuscito a rimuovere la lista dal server."
+                  t("common.error_title"),
+                  e?.message ?? t("myLists.remove_server_err")
                 );
               }
             })();
           },
         },
         {
-          text: "Annulla",
+          text: t("common.cancel"),
           style: "cancel",
         },
       ],
@@ -556,7 +574,7 @@ export const MyListsScreen: React.FC<Props> = ({
     return (
       <View style={styles.center}>
         <ActivityIndicator />
-        <Text>Carico le tue liste...</Text>
+        <Text>{t("myLists.loading")}</Text>
       </View>
     );
   }
@@ -564,7 +582,7 @@ export const MyListsScreen: React.FC<Props> = ({
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Le mie liste</Text>
+        <Text style={styles.title}>{t("myLists.title")}</Text>
 
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={showBackendStatusToast}>
@@ -596,7 +614,7 @@ export const MyListsScreen: React.FC<Props> = ({
 
       {lists.length === 0 ? (
         <Text style={styles.emptyText}>
-          Non hai ancora nessuna lista. Creane una nuova!
+          {t("myLists.empty")}
         </Text>
       ) : (
         <FlatList
@@ -648,7 +666,7 @@ export const MyListsScreen: React.FC<Props> = ({
       )}
 
       <View style={styles.bottom}>
-        <Button title="Crea una nuova lista" onPress={onCreateNewList} />
+        <Button title={t("myLists.create_new")} onPress={onCreateNewList} />
       </View>
 
       {/* Modal import deep link */}
@@ -663,17 +681,13 @@ export const MyListsScreen: React.FC<Props> = ({
             <Text style={styles.importModalTitle}>
               Incolla il link della lista
             </Text>
-            <Text style={styles.importModalHelper}>
-              Incolla un link del tipo:
-              {"\n"}
-              sharedlist://l/&lt;id&gt;?k=&lt;chiave&gt;
-            </Text>
+            <Text style={styles.importModalHelper}>{t("myLists.import_dialog_helper")}</Text>
 
             <TextInput
               style={styles.importModalInput}
               value={importLinkText}
               onChangeText={setImportLinkText}
-              placeholder="sharedlist://l/..."
+              placeholder={t("myLists.import_dialog_placeholder")}
               multiline
             />
 
@@ -682,7 +696,7 @@ export const MyListsScreen: React.FC<Props> = ({
                 style={styles.importModalButton}
                 onPress={() => setImportDialogVisible(false)}
               >
-                <Text style={styles.importModalButtonText}>Annulla</Text>
+                <Text style={styles.importModalButtonText}>{t("common.cancel")}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

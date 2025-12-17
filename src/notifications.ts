@@ -36,7 +36,7 @@ export async function initNotifications() {
   PushNotification.createChannel(
     {
       channelId: CHANNEL_ID,
-      channelName: "SharedList aggiornamenti",
+      channelName: i18n.t("notifications.channel_name"),
       importance: 4, // high
     },
     (created) => console.log("createChannel returned", created)

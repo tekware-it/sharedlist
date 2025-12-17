@@ -15,6 +15,7 @@ import {
   Platform,
   ToastAndroid,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import {
   apiGetList,
@@ -71,6 +72,8 @@ const fallbackFlagsDefinition: FlagsDefinition = {
 };
 
 export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
+  const { t } = useTranslation();
+
   const [meta, setMeta] = useState<ListMeta | null>(null);
   const [items, setItems] = useState<ItemView[]>([]);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
@@ -154,7 +157,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
 
         const foundList = storedLists.find((l) => l.listId === listId);
         const offlineMeta: ListMeta = {
-          name: foundList?.name ?? "Lista offline",
+          name: foundList?.name ?? t("list.offline_title"),
           flagsDefinition: fallbackFlagsDefinition,
         };
         setMeta(offlineMeta);
@@ -291,7 +294,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
         );
       } catch (e: any) {
         console.warn("[ListScreen] online refresh failed", e);
-        // se vuoi, qui puoi fare setError("Impossibile contattare il server");
+        // se vuoi, qui puoi fare setError(t("list.server_unreachable"));
         // ma NON rimettiamo lo spinner: l'utente vede i dati offline.
       }
     }
@@ -431,18 +434,18 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     const deepLink = `sharedlist://l/${listId}?k=${encodedKey}`;
 
     Alert.alert(
-      "Condividi lista",
+      t("list.shared_title"),
       "Chiunque abbia questo link può vedere, modificare e cancellare la lista. Usalo solo con persone di cui ti fidi.",
       [
-        { text: "Annulla", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Condividi",
+          text: t("common.share"),
           style: "default",
           onPress: async () => {
             try {
               await Share.share({
                 message: `Lista condivisa: ${
-                  meta?.name ?? "Lista"
+                  meta?.name ?? t("list.title_fallback")
                 }\n${deepLink}`,
               });
             } catch (e) {
@@ -455,31 +458,20 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   }
 
  function showBackendStatusToast() {
-   let message: string;
+    let message: string;
 
-   if (backendOnline === null) {
-     message = "Stato backend non ancora verificato.";
-   } else if (backendOnline) {
-     message = "Backend online: connessione OK.";
-   } else {
-     message = "Backend offline: nessuna sincronizzazione col server.";
-   }
+    if (backendOnline === null) {
+      message = t("list.backend_unknown");
+    } else if (backendOnline) {
+      message = t("list.backend_online");
+    } else {
+      message = t("list.backend_offline");
+    }
 
-   if (Platform.OS === "android") {
-     ToastAndroid.show(message, ToastAndroid.LONG);
-   } else {
-     Alert.alert("Stato backend", message);
-   }
- }
-
-
-  function showPendingItemToast() {
-    const message =
-      "Elemento non sincronizzato: sarà inviato al server quando è online.";
     if (Platform.OS === "android") {
       ToastAndroid.show(message, ToastAndroid.LONG);
     } else {
-      Alert.alert("In attesa di sincronizzazione", message);
+      Alert.alert(t("myLists.backend_status_title"), message);
     }
   }
 
@@ -596,8 +588,8 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     } catch (e: any) {
       console.error(e);
       Alert.alert(
-        "Errore",
-        e?.message ?? "Errore durante l'aggiunta dell'elemento"
+        t("common.error_title"),
+        e?.message ?? t("list.add_item_error")
       );
     } finally {
       setCreatingItem(false);
@@ -684,7 +676,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       const msg = String(e?.message ?? "");
       // Errori HTTP veri (es. 404) -> non trattiamo come offline
       if (msg.startsWith("HTTP ")) {
-        Alert.alert("Errore", msg);
+        Alert.alert(t("common.error_title"), msg);
         return;
       }
 
@@ -736,12 +728,12 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   async function handleDeleteItem(target: ItemView) {
     // conferma
     Alert.alert(
-      "Rimuovi elemento",
+      t("list.remove_item_title"),
       `Vuoi rimuovere "${target.plaintext?.label ?? "l'elemento"}" dalla lista?`,
       [
-        { text: "Annulla", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Rimuovi",
+          text: t("common.remove"),
           style: "destructive",
           onPress: () => {
             (async () => {
@@ -797,7 +789,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
 
                 Alert.alert(
                   "Offline",
-                  "Eliminazione salvata solo sul dispositivo. Verrà sincronizzata quando il server sarà online."
+                  t("list.delete_saved_offline")
                 );
               }
             })();
@@ -808,7 +800,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   }
 
   function formatItemText(item: ItemView): string {
-    if (!item.plaintext) return "- (cifratura non leggibile)";
+    if (!item.plaintext) return t("list.cipher_unreadable_bullet");
 
     const { label, flags } = item.plaintext;
     if (!flags) return `- ${label}`;
@@ -822,7 +814,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   }
 
   function handleCopyAsText() {
-    const title = meta?.name ?? "Lista";
+    const title = meta?.name ?? t("list.title_fallback");
 
     const lines: string[] = [];
     lines.push(title);
@@ -847,9 +839,9 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     Clipboard.setString(text);
 
     if (Platform.OS === "android") {
-      ToastAndroid.show("Lista copiata negli appunti", ToastAndroid.SHORT);
+      ToastAndroid.show(t("list.copy_list_to_clipboard"), ToastAndroid.SHORT);
     } else {
-      Alert.alert("Copiato", "Lista copiata negli appunti");
+      Alert.alert(t("common.copied"), t("list.copy_list_to_clipboard"));
     }
   }
 
@@ -882,7 +874,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     >
       <View style={styles.container}>
         <View style={styles.headerRow}>
-          <Text style={styles.title}>{meta?.name ?? "Lista"}</Text>
+          <Text style={styles.title}>{meta?.name ?? t("list.title_fallback")}</Text>
 
           <View style={styles.headerActions}>
             {/* pallino health a destra, prima delle icone */}
@@ -944,7 +936,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
                   <View style={styles.itemRow}>
                     <View style={styles.itemContent}>
                       <Text style={labelStyles}>
-                        {item.plaintext?.label ?? "(cifratura non leggibile)"}
+                        {item.plaintext?.label ?? t("list.cipher_unreadable")}
                       </Text>
                     </View>
 

@@ -1,5 +1,8 @@
 // src/screens/SettingsScreen.tsx
 import React, { useEffect, useState } from "react";
+import * as RNLocalize from "react-native-localize";
+import { useTranslation } from "react-i18next";
+
 import {
   View,
   Text,
@@ -16,6 +19,7 @@ import {
   BackHandler,
   Switch,
 } from "react-native";
+
 import {
   loadSettings,
   saveSettings,
@@ -23,6 +27,7 @@ import {
   DEFAULT_HEALTH_INTERVAL_MS,
   type Settings,
 } from "../storage/settingsStore";
+
 import {
   unsubscribeFromAllListsPush,
   subscribeToAllStoredListsPush,
@@ -38,8 +43,10 @@ const APP_VERSION = "0.1.0"; // allinea a package.json se vuoi
 
 type ActiveDialog = "none" | "server" | "interval";
 type BackendTestStatus = "idle" | "testing" | "online" | "offline";
+type LanguageOption = "system" | "it" | "en";
 
 export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
+  const { t, i18n } = useTranslation();
   const [backendUrl, setBackendUrl] = useState("");
   const [healthIntervalSec, setHealthIntervalSec] = useState("30");
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -49,6 +56,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
   const [activeDialog, setActiveDialog] = useState<ActiveDialog>("none");
   const [editBackendUrl, setEditBackendUrl] = useState("");
   const [editHealthSec, setEditHealthSec] = useState("");
+  const [langDialogVisible, setLangDialogVisible] = useState(false);
 
   const [backendTestStatus, setBackendTestStatus] =
     useState<BackendTestStatus>("idle");
@@ -176,13 +184,13 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
       setBackendUrl(trimmed);
       setActiveDialog("none");
       if (Platform.OS === "android") {
-        ToastAndroid.show("URL backend salvato", ToastAndroid.SHORT);
+        ToastAndroid.show(t("settings.backend_url_saved"), ToastAndroid.SHORT);
       } else {
         Alert.alert("OK", "URL backend salvato");
       }
     } catch (e) {
       console.error(e);
-      Alert.alert("Errore", "Non sono riuscito a salvare l'URL.");
+      Alert.alert(t("common.error_title"), t("settings.save_language_failed"));
     }
   }
 
@@ -197,13 +205,13 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
       setHealthIntervalSec(String(sec));
       setActiveDialog("none");
       if (Platform.OS === "android") {
-        ToastAndroid.show("Intervallo salvato", ToastAndroid.SHORT);
+        ToastAndroid.show(t("settings.interval_saved"), ToastAndroid.SHORT);
       } else {
         Alert.alert("OK", "Intervallo salvato");
       }
     } catch (e) {
       console.error(e);
-      Alert.alert("Errore", "Non sono riuscito a salvare l'intervallo.");
+      Alert.alert(t("common.error_title"), "Non sono riuscito a salvare l'intervallo.");
     }
   }
 
@@ -225,9 +233,71 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
     const url = "https://buymeacoffee.com/tuo-nome"; // TODO: metti il tuo link
     Linking.openURL(url).catch((e) => {
       console.warn(e);
-      Alert.alert("Errore", "Non riesco ad aprire il browser.");
+      Alert.alert(t("common.error_title"), "Non riesco ad aprire il browser.");
     });
   }
+
+    function languageLabel(lang: LanguageOption): string {
+    switch (lang) {
+      case "it":
+        return t("settings.language_option_it");
+      case "en":
+        return t("settings.language_option_en");
+      case "system":
+      default:
+        return t("settings.language_option_system");
+    }
+  }
+
+
+    async function changeLanguage(lang: LanguageOption) {
+    try {
+      const next = await saveSettings({ language: lang });
+      setSettings(next);
+
+      if (lang === "system") {
+        const locales = RNLocalize.getLocales();
+        const code = locales?.[0]?.languageCode?.toLowerCase();
+        await i18n.changeLanguage(code === "en" ? "en" : "it");
+      } else {
+        await i18n.changeLanguage(lang);
+      }
+
+      setLangDialogVisible(false);
+
+      if (Platform.OS === "android") {
+        ToastAndroid.show(i18n.t("common.language_updated"), ToastAndroid.SHORT);
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert(t("common.error_title"), t("settings.save_language_failed"));
+    }
+  }
+
+function renderLanguageOption(
+      value: LanguageOption,
+      label: string,
+      description?: string
+    ) {
+      const selected = settings?.language === value;
+      return (
+        <TouchableOpacity
+          key={value}
+          style={styles.modalRow}
+          onPress={() => changeLanguage(value)}
+        >
+          <View style={styles.modalRowText}>
+            <Text style={styles.rowLabel}>{label}</Text>
+            {description ? (
+              <Text style={styles.rowDescription}>{description}</Text>
+            ) : null}
+          </View>
+          <View style={styles.langRadioOuter}>
+            {selected ? <View style={styles.langRadioInner} /> : null}
+          </View>
+        </TouchableOpacity>
+      );
+    }
 
   async function applySettingsAndMaybeResub(patch: Partial<Settings>) {
       const next = await saveSettings(patch);
@@ -245,6 +315,9 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
   const openNotifDialog = () => setNotifDialogVisible(true);
   const closeNotifDialog = () => setNotifDialogVisible(false);
 
+  const openLangDialog = () => setLangDialogVisible(true);
+  const closeLangDialog = () => setLangDialogVisible(false);
+
   //
   // UI principale
   //
@@ -261,13 +334,13 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
     <View style={styles.container}>
       {/* Header: solo titolo, back = tasto hardware su Android */}
       <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>Impostazioni</Text>
+        <Text style={styles.headerTitle}>{t("settings.title")}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <TouchableOpacity onPress={openServerDialog}>
           <View style={styles.row}>
-            <Text style={styles.rowTitle}>Server</Text>
+            <Text style={styles.rowTitle}>{t("settings.server")}</Text>
             <Text style={styles.rowValue} numberOfLines={1}>
               {backendUrl || DEFAULT_BACKEND_URL}
             </Text>
@@ -277,7 +350,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
         <TouchableOpacity onPress={openIntervalDialog}>
           <View style={styles.row}>
             <Text style={styles.rowTitle}>
-              Intervallo di controllo (secondi)
+              {t("settings.interval")}
             </Text>
             <Text style={styles.rowValue}>{healthIntervalSec}</Text>
           </View>
@@ -285,16 +358,27 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
 
         <TouchableOpacity onPress={openNotifDialog}>
           <View style={styles.row}>
-            <Text style={styles.rowTitle}>Notifiche</Text>
+            <Text style={styles.rowTitle}>{t("settings.notifications")}</Text>
             <Text style={styles.rowDescription}>
-              Gestisci notifiche push e aggiornamento liste in background.
+              {t("settings.notifications_desc")}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={openLangDialog}>
+          <View style={styles.row}>
+            <Text style={styles.rowTitle}>{t("settings.language")}</Text>
+            <Text style={styles.rowValue}>
+              {languageLabel(
+                (settings.language ?? "system") as LanguageOption
+              )}
             </Text>
           </View>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={handleInfo}>
           <View style={styles.row}>
-            <Text style={styles.rowTitle}>Informazioni</Text>
+            <Text style={styles.rowTitle}>{t("settings.info")}</Text>
           </View>
         </TouchableOpacity>
 
@@ -304,6 +388,39 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
           </View>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Dialog Lingua */}
+      <Modal
+        transparent
+        visible={langDialogVisible}
+        animationType="fade"
+        onRequestClose={closeLangDialog}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t("settings.language_dialog_title")}</Text>
+
+            {renderLanguageOption(
+              "system",
+              t("settings.language_option_system"),
+              t("settings.language_option_system_desc")
+            )}
+            {renderLanguageOption("it", t("settings.language_option_it"))}
+            {renderLanguageOption("en", t("settings.language_option_en"))}
+
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={closeLangDialog}
+              >
+                <Text style={styles.modalButtonText}>{t("common.close")}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+
 
       {/* Dialog SERVER con pallino stato */}
       <Modal
@@ -331,9 +448,9 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
                   )}
                   <Text style={styles.modalStatusText}>
                     {backendTestStatus === "online"
-                      ? "Online"
+                      ? t("common.online")
                       : backendTestStatus === "offline"
-                      ? "Offline"
+                      ? t("common.offline")
                       : "Sconosciuto"}
                   </Text>
                 </>
@@ -379,7 +496,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
-              Intervallo di controllo (secondi)
+              {t("settings.interval")}
             </Text>
             <TextInput
               style={styles.modalInput}
@@ -416,11 +533,11 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
         >
           <View style={styles.modalBackdrop}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Notifiche</Text>
+              <Text style={styles.modalTitle}>{t("settings.notifications")}</Text>
 
               <View style={styles.modalRow}>
                 <View style={styles.modalRowText}>
-                  <Text style={styles.rowLabel}>Abilita notifiche</Text>
+                  <Text style={styles.rowLabel}>{t("settings.enable_notifications")}</Text>
                   <Text style={styles.rowDescription}>
                     Mostra notifiche quando una lista condivisa viene modificata.
                   </Text>
@@ -435,7 +552,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
 
               <View style={styles.modalRow}>
                 <View style={styles.modalRowText}>
-                  <Text style={styles.rowLabel}>Aggiorna liste in background</Text>
+                  <Text style={styles.rowLabel}>{t("settings.enable_bg_sync")}</Text>
                   <Text style={styles.rowDescription}>
                     Sincronizza le liste anche a app chiusa. Se disattivi entrambe
                     le opzioni, gli aggiornamenti avvengono solo quando apri l&apos;app.
@@ -455,7 +572,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
                   style={styles.modalButton}
                   onPress={closeNotifDialog}
                 >
-                  <Text style={styles.modalButtonText}>Chiudi</Text>
+                  <Text style={styles.modalButtonText}>{t("common.close")}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -580,6 +697,22 @@ const styles = StyleSheet.create({
       flexDirection: "row",
       justifyContent: "flex-end",
     },
+
+  langRadioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#555",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  langRadioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#007AFF",
+  },
 
   dotOnline: {
     width: 10,

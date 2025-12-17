@@ -1,6 +1,7 @@
 // index.js
 import '@react-native-firebase/app';
 import messaging from "@react-native-firebase/messaging";
+import "./src/i18n";
 
 import { AppRegistry } from "react-native";
 import App from "./App";
@@ -8,6 +9,7 @@ import { name as appName } from "./app.json";
 import { initNotifications, notifyListsChanged } from "./src/notifications";
 import { runHealthAndSyncOnce } from "./src/sync/healthAndSyncWorker";
 import { loadSettings } from "./src/storage/settingsStore";
+
 
 
 // Inizializza le local notification (se hai già questo modulo)

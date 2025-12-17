@@ -10,6 +10,7 @@ import {
   BackHandler,
 } from "react-native";
 import uuid from "react-native-uuid";
+import { useTranslation } from "react-i18next";
 
 import { apiCreateList } from "../api/client";
 import { upsertStoredList } from "../storage/listsStore";
@@ -22,7 +23,7 @@ import { subscribeToListPush } from "../push/subscribe";
 
 
 type Props = {
-  onCreated: (listId: string, listKey: string) => void;  // 👈 questo
+  onCreated: (listId: string, listKey: string) => void;
   onCancel: () => void;
 };
 
@@ -30,6 +31,10 @@ const defaultFlagsDefinition: FlagsDefinition = {
   checked: { label: "Preso", description: "Articolo già acquistato" },
   crossed: { label: "Da verificare", description: "Controllare qualcosa" },
   highlighted: { label: "Importante", description: "Da non dimenticare" },
+
+  //checked: { label: i18n.t("flags.checked"), description: "Articolo già acquistato" },
+  //crossed: { label: i18n.t("flags.crossed"), description: "Controllare qualcosa" },
+  //highlighted: { label: i18n.t("flags.highlighted"), description: "Da non dimenticare" },
 };
 
 function makeDefaultListName(): string {
@@ -42,6 +47,8 @@ function makeDefaultListName(): string {
 
 
 export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
+  const { t } = useTranslation();
+
   const [name, setName] = useState<string>(() => makeDefaultListName());
   const [creating, setCreating] = useState(false);
 
@@ -110,7 +117,7 @@ export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
 
         Alert.alert(
           "Offline",
-          "Lista creata solo sul dispositivo. Verrà sincronizzata automaticamente quando il server sarà raggiungibile."
+          t("createList.offline_created")
         );
       }
       await subscribeToListPush(listId);
@@ -118,8 +125,8 @@ export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
     } catch (e: any) {
       console.error(e);
       Alert.alert(
-        "Errore",
-        e?.message ?? "Errore durante la creazione della lista"
+        t("common.error_title"),
+        e?.message ?? t("createList.error_title")
       );
     } finally {
       setCreating(false);
@@ -149,7 +156,7 @@ export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
             <Text style={styles.loadingText}>Creazione in corso...</Text>
           </View>
         ) : (
-          <Button title="Crea lista" onPress={handleCreate} />
+          <Button title={t("createList.title")} onPress={handleCreate} />
         )}
       </View>
     </View>

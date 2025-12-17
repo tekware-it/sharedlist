@@ -1,26 +1,32 @@
 // src/storage/settingsStore.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+export type LanguageOption = "system" | "it" | "en";
+
 export type AppSettings = {
   backendUrl: string;
   healthCheckIntervalMs: number;
   notificationsEnabled: boolean;
   backgroundSyncEnabled: boolean;
+  language: LanguageOption;
 };
+
+export type Settings = AppSettings;
 
 const SETTINGS_KEY = "sharedlist.settings";
 
 // URL di default: adattalo al tuo backend
 export const DEFAULT_BACKEND_URL =
-  __DEV__ ? "http://192.168.1.110:8000" : "https://sharedlist.example.com";
+  __DEV__ ? "http://sharedlist.ovh:8000" : "https://sharedlist.ovh:8001";
 
-export const DEFAULT_HEALTH_INTERVAL_MS = 3000;
+export const DEFAULT_HEALTH_INTERVAL_MS = 30000;
 
 const DEFAULT_SETTINGS: AppSettings = {
   backendUrl: DEFAULT_BACKEND_URL,
   healthCheckIntervalMs: DEFAULT_HEALTH_INTERVAL_MS,
   notificationsEnabled: true,
   backgroundSyncEnabled: true,
+  language: "system",
 };
 
 export async function loadSettings(): Promise<AppSettings> {
@@ -28,6 +34,7 @@ export async function loadSettings(): Promise<AppSettings> {
   if (!raw) return DEFAULT_SETTINGS;
   try {
     const parsed = JSON.parse(raw) as Partial<AppSettings>;
+
     return {
       ...DEFAULT_SETTINGS,
       backendUrl: parsed.backendUrl ?? DEFAULT_BACKEND_URL,
@@ -37,6 +44,7 @@ export async function loadSettings(): Promise<AppSettings> {
         parsed.notificationsEnabled ?? DEFAULT_SETTINGS.notificationsEnabled,
       backgroundSyncEnabled:
         parsed.backgroundSyncEnabled ?? DEFAULT_SETTINGS.backgroundSyncEnabled,
+      language: parsed.language ?? DEFAULT_SETTINGS.language,
     };
   } catch {
     return DEFAULT_SETTINGS;
