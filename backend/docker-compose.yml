@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: sharedlist_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sharedlist
+      POSTGRES_USER: sharedlist
+      POSTGRES_PASSWORD: sharedlist
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    networks:
+      - sharedlist_net
+
+  redis:
+    image: redis:7
+    container_name: sharedlist_redis
+    restart: unless-stopped
+    networks:
+      - sharedlist_net
+
+  backend:
+    build: .
+    container_name: sharedlist_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://sharedlist:sharedlist@db:5432/sharedlist
+      REDIS_URL: redis://redis:6379/0
+      DISABLE_IP_RATE_LIMIT: "1"
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/sharedlist-ff538-firebase-adminsdk-fbsvc-ac84695e1a.json
+      FIREBASE_PROJECT_ID: sharedlist-ff538
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8000:8000"
+    networks:
+      - sharedlist_net
+    volumes:
+      - ../secrets:/run/secrets/
+
+volumes:
+  db_data:
+
+networks:
+  sharedlist_net:
