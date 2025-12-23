@@ -50,6 +50,9 @@ import {
 import Clipboard from "@react-native-clipboard/clipboard";
 import { syncEvents } from "../events/syncEvents";
 
+import { useHeaderHeight } from "@react-navigation/elements";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 
 type Props = {
   listId: string;
@@ -77,6 +80,9 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const [meta, setMeta] = useState<ListMeta | null>(null);
   const [items, setItems] = useState<ItemView[]>([]);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+
+  const headerHeight = useHeaderHeight();
+  const insets = useSafeAreaInsets();
 
 
   const { orderedItems, firstCrossedIndex } = useMemo(() => {
@@ -475,6 +481,15 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     }
   }
 
+  function showPendingItemToast() {
+      const message = t("myLists.pending_toast_msg");
+      if (Platform.OS === "android") {
+        ToastAndroid.show(message, ToastAndroid.LONG);
+      } else {
+        Alert.alert(t("myLists.pending_toast_title"), message);
+      }
+    }
+
   //
   // Aggiunta item: online-first, fallback offline (queue + ⏳ + cache)
   //
@@ -870,7 +885,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={80}
+      keyboardVerticalOffset={Platform.OS === "ios" ? headerHeight : 0}
     >
       <View style={styles.container}>
         <View style={styles.headerRow}>
@@ -995,10 +1010,12 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
                 </>
               );
             }}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingBottom: 12 }}
           />
         )}
 
-        <View style={styles.newItemBar}>
+        <View style={[styles.newItemBar, { paddingBottom: 8 + (Platform.OS === "ios" ? insets.bottom : 0) }]}>
           <TextInput
             style={styles.input}
             value={newLabel}
@@ -1155,6 +1172,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     marginTop: 8,
+    paddingBottom: Platform.OS === "ios" ? 8 : 8,
   },
 
   crossedSeparator: {

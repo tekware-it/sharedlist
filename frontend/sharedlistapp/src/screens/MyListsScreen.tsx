@@ -674,6 +674,8 @@ export const MyListsScreen: React.FC<Props> = ({
         transparent
         visible={importDialogVisible}
         animationType="slide"
+        presentationStyle="overFullScreen"
+        supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
         onRequestClose={() => setImportDialogVisible(false)}
       >
         <View style={styles.importModalBackdrop}>

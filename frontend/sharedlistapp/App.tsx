@@ -1,170 +1,138 @@
-import React, { useEffect, useState } from "react";
+import "react-native-get-random-values";
+
+import React, { useEffect, useRef, useState } from "react";
 import {
-  SafeAreaView,
   ActivityIndicator,
-  View,
-  Text,
-  BackHandler,
   AppState,
+  SafeAreaView,
+  Text,
+  View,
 } from "react-native";
 import { Linking } from "react-native";
+
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import {
+  NavigationContainer,
+  createNavigationContainerRef,
+  StackActions,
+} from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { MyListsScreen } from "./src/screens/MyListsScreen";
 import { CreateListScreen } from "./src/screens/CreateListScreen";
 import { ListScreen } from "./src/screens/ListScreen";
+import { SettingsScreen } from "./src/screens/SettingsScreen";
+
 import { parseSharedListUrl } from "./src/linking/sharedListLink";
 import { upsertStoredList } from "./src/storage/listsStore";
-import { startSyncWorker } from "./src/sync/syncWorker";
-import { SettingsScreen } from "./src/screens/SettingsScreen";
 import {
   startForegroundSyncWorker,
   stopForegroundSyncWorker,
 } from "./src/sync/healthAndSyncWorker";
 
+type RootStackParamList = {
+  MyLists: undefined;
+  CreateList: undefined;
+  List: { listId: string; listKey: string };
+  Settings: undefined;
+};
 
-import "react-native-get-random-values";
-
-type ScreenState =
-  | { type: "myLists" }
-  | { type: "create" }
-  | { type: "list"; listId: string; listKey: string }
-  | { type: "settings" };
+const Stack = createNativeStackNavigator<RootStackParamList>();
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 export default function App() {
   const [ready, setReady] = useState(false);
-  const [screen, setScreen] = useState<ScreenState>({ type: "myLists" });
 
+  // Se arriva un deep link prima che la NavigationContainer sia pronta
+  const pendingLinkRef = useRef<{ listId: string; listKey: string } | null>(
+    null
+  );
+
+  // ---- Foreground sync worker (come prima) ----
+  useEffect(() => {
+    let currentState = AppState.currentState;
+
+    const handleAppStateChange = async (nextState: string) => {
+      if (nextState === currentState) return;
+      currentState = nextState;
+
+      if (nextState === "active") {
+        try {
+          await startForegroundSyncWorker();
+        } catch (e) {
+          console.warn("[App] startForegroundSyncWorker failed", e);
+        }
+      } else if (nextState === "background" || nextState === "inactive") {
+        stopForegroundSyncWorker();
+      }
+    };
+
+    const sub = AppState.addEventListener("change", handleAppStateChange);
+
+    // primo avvio: se siamo già in active
+    startForegroundSyncWorker().catch((e) =>
+      console.warn("[App] initial startForegroundSyncWorker failed", e)
+    );
+
+    return () => {
+      sub.remove();
+      stopForegroundSyncWorker();
+    };
+  }, []);
+
+  // ---- Deep linking (iniziale + runtime) ----
   useEffect(() => {
     let mounted = true;
 
-    async function init() {
+    const goToParsedLink = async (parsed: { listId: string; listKey: string }) => {
+      // salva in storage così poi appare in "Le mie liste"
+      try {
+        await upsertStoredList(parsed.listId, parsed.listKey);
+      } catch (e) {
+        console.warn("[App] upsertStoredList failed", e);
+      }
+
+      if (navigationRef.isReady()) {
+        navigationRef.navigate("List", {
+          listId: parsed.listId,
+          listKey: parsed.listKey,
+        });
+      } else {
+        pendingLinkRef.current = parsed;
+      }
+    };
+
+    const handleUrl = async (url: string | null) => {
+      if (!url) return;
+      const parsed = parseSharedListUrl(url);
+      if (!parsed) return;
+      await goToParsedLink(parsed);
+    };
+
+    (async () => {
       try {
         const url = await Linking.getInitialURL();
-        if (url) {
-          const parsed = parseSharedListUrl(url);
-          if (parsed && mounted) {
-            setScreen({
-              type: "list",
-              listId: parsed.listId,
-              listKey: parsed.listKey,
-            });
-          }
+        if (mounted) {
+          await handleUrl(url);
+          setReady(true);
         }
-
-        const sub = Linking.addEventListener("url", ({ url }) => {
-          const parsed = parseSharedListUrl(url);
-          if (parsed) {
-            setScreen({
-              type: "list",
-              listId: parsed.listId,
-              listKey: parsed.listKey,
-            });
-          }
-        });
-
-        setReady(true);
-
-        return () => {
-          mounted = false;
-          // @ts-ignore
-          sub.remove?.();
-        };
       } catch (e) {
-        console.error("Linking init error", e);
-        setReady(true);
+        console.warn("[App] Linking init error", e);
+        if (mounted) setReady(true);
       }
-    }
+    })();
 
-    init();
-  }, []);
-
-  useEffect(() => {
-      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-        if (screen.type === "list") {
-          setScreen({ type: "myLists" });
-          return true;
-        }
-        if (screen.type === "create") {
-          setScreen({ type: "myLists" });
-          return true;
-        }
-        return false;
-      });
-
-      return () => sub.remove();
-    }, [screen.type]);
-
-  useEffect(() => {
-    startSyncWorker();
-  }, []);
-
-  // worker per health+sync remoto (pull ← server) mentre l'app è attiva
-    useEffect(() => {
-      let currentState: AppStateStatus = AppState.currentState;
-
-      const handleAppStateChange = async (nextState: AppStateStatus) => {
-        if (nextState === currentState) return;
-        currentState = nextState;
-
-        if (nextState === "active") {
-          // app in foreground → avvia il worker
-          try {
-            await startForegroundSyncWorker();
-          } catch (e) {
-            console.warn("[App] startForegroundSyncWorker failed", e);
-          }
-        } else if (nextState === "background" || nextState === "inactive") {
-          // app in background → ferma il worker (in BG ci pensa FCM)
-          stopForegroundSyncWorker();
-        }
-      };
-
-      const sub = AppState.addEventListener("change", handleAppStateChange);
-
-      // primo avvio: se siamo già in active
-      startForegroundSyncWorker().catch((e) =>
-        console.warn("[App] initial startForegroundSyncWorker failed", e)
+    const sub = Linking.addEventListener("url", (event) => {
+      handleUrl(event.url).catch((e) =>
+        console.warn("[App] handleUrl failed", e)
       );
+    });
 
-      return () => {
-        sub.remove();
-        stopForegroundSyncWorker();
-      };
-    }, []);
-
-  useEffect(() => {
-      function handleUrl(url: string | null) {
-        if (!url) return;
-        try {
-          const parsed = new URL(url); // funziona in RN moderno
-
-          // sharedlist://l/<listId>?k=<chiave>
-          if (parsed.protocol === "sharedlist:" && parsed.host === "l") {
-            const path = parsed.pathname.replace(/^\/+/, ""); // toglie / iniziali
-            const listId = path; // qui path è solo "<listId>"
-            const key = parsed.searchParams.get("k");
-            if (listId && key) {
-              setScreen({ type: "list", listId, listKey: key });
-            }
-          }
-        } catch (e) {
-          console.warn("Invalid URL", url, e);
-        }
-      }
-
-      // URL iniziale (app aperta da link)
-      Linking.getInitialURL().then(handleUrl).catch(console.warn);
-
-      // URL ricevuti a caldo (app già aperta)
-      const sub = Linking.addEventListener("url", (event) =>
-        handleUrl(event.url)
-      );
-
-      return () => {
-        sub.remove();
-      };
-    }, []);
-
+    return () => {
+      mounted = false;
+      sub.remove();
+    };
+  }, []);
 
   if (!ready) {
     return (
@@ -184,40 +152,81 @@ export default function App() {
     );
   }
 
-  let content = null;
+  // --- Wrapper screens (così non devi cambiare i tuoi componenti) ---
+  const MyListsNavScreen = () => (
+    <MyListsScreen
+      onSelectList={(listId, listKey) =>
+        navigationRef.navigate("List", { listId, listKey })
+      }
+      onCreateNewList={() => navigationRef.navigate("CreateList")}
+      onOpenSettings={() => navigationRef.navigate("Settings")}
+    />
+  );
 
-  if (screen.type === "myLists") {
-    content = (
-      <MyListsScreen
-        onSelectList={(listId, listKey) =>
-          setScreen({ type: "list", listId, listKey })
-        }
-        onCreateNewList={() => setScreen({ type: "createList" })}
-        onOpenSettings={() => setScreen({ type: "settings" })} // 👈 qui
-      />
-    );
-  } else if (screen.type === "createList") {
-    content = (
-      <CreateListScreen
-        onCreated={(listId, listKey) =>
-          setScreen({ type: "list", listId, listKey })
-        }
-        onCancel={() => setScreen({ type: "myLists" })}
-      />
-    );
-  } else if (screen.type === "list") {
-    content = (
-      <ListScreen
-        listId={screen.listId}
-        listKeyParam={screen.listKey}
-      />
-    );
-  } else if (screen.type === "settings") {
-    content = (
-      <SettingsScreen onClose={() => setScreen({ type: "myLists" })} />
-    );
-  }
+  const CreateListNavScreen = () => (
+    <CreateListScreen
+      onCancel={() => navigationRef.goBack()}
+      onCreated={async (listId, listKey) => {
+      try {
+        await upsertStoredList(listId, listKey);
+      } catch (e) {
+        console.warn("[App] upsertStoredList failed", e);
+      }
 
-  return <SafeAreaView style={{ flex: 1 }}>{content}</SafeAreaView>;
+      // ✅ sostituisce CreateList con List: back da List → MyLists
+      navigationRef.dispatch(
+        StackActions.replace("List", { listId, listKey })
+      );
+      }}
+    />
+  );
 
+  const ListNavScreen = ({ route }: { route: { params: { listId: string; listKey: string } } }) => (
+    <ListScreen listId={route.params.listId} listKeyParam={route.params.listKey} />
+  );
+
+  const SettingsNavScreen = () => (
+    <SettingsScreen onClose={() => navigationRef.goBack()} />
+  );
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <NavigationContainer
+        ref={navigationRef}
+        onReady={() => {
+          const pending = pendingLinkRef.current;
+          if (pending) {
+            pendingLinkRef.current = null;
+            navigationRef.navigate("List", {
+              listId: pending.listId,
+              listKey: pending.listKey,
+            });
+          }
+        }}
+      >
+        <Stack.Navigator initialRouteName="MyLists">
+          <Stack.Screen
+            name="MyLists"
+            component={MyListsNavScreen}
+            options={{ title: "Le mie liste" }}
+          />
+          <Stack.Screen
+            name="CreateList"
+            component={CreateListNavScreen}
+            options={{ title: "Nuova lista" }}
+          />
+          <Stack.Screen
+            name="List"
+            component={ListNavScreen as any}
+            options={{ title: "Lista" }}
+          />
+          <Stack.Screen
+            name="Settings"
+            component={SettingsNavScreen}
+            options={{ title: "Impostazioni" }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </GestureHandlerRootView>
+  );
 }

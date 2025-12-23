@@ -20,7 +20,7 @@ import { buildSharedListUrl } from "../linking/sharedListLink";
 import { enqueueCreateList } from "../storage/syncQueue";
 import { generateListKey, encryptJson, ListKey } from "../crypto/e2e";
 import { subscribeToListPush } from "../push/subscribe";
-
+import { syncEvents } from "../events/syncEvents";
 
 type Props = {
   onCreated: (listId: string, listKey: string) => void;
@@ -97,6 +97,9 @@ export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
           lastSeenRev: null,
           pendingCreate: false,
         });
+
+        syncEvents.emitListsChanged();
+        
       } catch (e: any) {
         console.warn("Create list failed, queueing for sync", e);
 
@@ -108,6 +111,8 @@ export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
           lastSeenRev: null,
           pendingCreate: true,
         });
+
+        syncEvents.emitListsChanged();
 
         await enqueueCreateList({
           listId,

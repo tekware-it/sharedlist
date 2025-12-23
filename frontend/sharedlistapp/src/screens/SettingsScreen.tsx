@@ -394,6 +394,8 @@ function renderLanguageOption(
         transparent
         visible={langDialogVisible}
         animationType="fade"
+        presentationStyle="overFullScreen"
+        supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
         onRequestClose={closeLangDialog}
       >
         <View style={styles.modalBackdrop}>
@@ -427,6 +429,8 @@ function renderLanguageOption(
         transparent
         visible={activeDialog === "server"}
         animationType="slide"
+        presentationStyle="overFullScreen"
+        supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
         onRequestClose={() => setActiveDialog("none")}
       >
         <View style={styles.modalBackdrop}>
@@ -491,6 +495,8 @@ function renderLanguageOption(
         transparent
         visible={activeDialog === "interval"}
         animationType="slide"
+        presentationStyle="overFullScreen"
+        supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
         onRequestClose={() => setActiveDialog("none")}
       >
         <View style={styles.modalBackdrop}>
@@ -529,6 +535,8 @@ function renderLanguageOption(
           transparent
           visible={notifDialogVisible}
           animationType="fade"
+          presentationStyle="overFullScreen"
+          supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
           onRequestClose={closeNotifDialog}
         >
           <View style={styles.modalBackdrop}>

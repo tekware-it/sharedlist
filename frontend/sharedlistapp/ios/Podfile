@@ -7,6 +7,8 @@ require Pod::Executable.execute_command('node', ['-p',
 
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
+# use_modular_headers!
+
 
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
@@ -31,4 +33,7 @@ target 'sharedlistapp' do
       # :ccache_enabled => true
     )
   end
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'FirebaseCore', :modular_headers => true
 end
