@@ -17,7 +17,7 @@ const SETTINGS_KEY = "sharedlist.settings";
 
 // URL di default: adattalo al tuo backend
 export const DEFAULT_BACKEND_URL =
-  __DEV__ ? "http://sharedlist.ovh:8000" : "https://sharedlist.ovh:8001";
+  __DEV__ ? "https://api.sharedlist.ovh" : "https://api.sharedlist.ovh";
 
 export const DEFAULT_HEALTH_INTERVAL_MS = 30000;
 
