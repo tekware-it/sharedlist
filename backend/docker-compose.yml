@@ -35,15 +35,34 @@ services:
     depends_on:
       - db
       - redis
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     networks:
       - sharedlist_net
     volumes:
       - ../secrets:/run/secrets/
 
+  caddy:
+    image: caddy:2
+    container_name: sharedlist_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - sharedlist_net
+    depends_on:
+      - backend
+
 volumes:
   db_data:
+  caddy_data:
+  caddy_config:
 
 networks:
   sharedlist_net:
+
