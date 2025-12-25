@@ -21,6 +21,18 @@ export async function initNotifications() {
     }
   }
 
+  PushNotification.createChannel(
+        {
+          channelId: CHANNEL_ID,
+          channelName: "Aggiornamenti liste",
+          importance: 4, // HIGH
+          vibrate: true,
+        },
+        (created) => {
+          console.log("Notification channel ready:", created);
+        }
+      );
+
   // configure DEVE stare fuori dai component (doc ufficiale)
   PushNotification.configure({
     onNotification: function (notification) {

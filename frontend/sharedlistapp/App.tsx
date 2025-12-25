@@ -204,7 +204,12 @@ export default function App() {
           }
         }}
       >
-        <Stack.Navigator initialRouteName="MyLists">
+        <Stack.Navigator
+          initialRouteName="MyLists"
+          screenOptions={{
+              headerShown: Platform.OS === "ios", // iOS: header con back; Android: niente barra
+            }}
+        >
           <Stack.Screen
             name="MyLists"
             component={MyListsNavScreen}

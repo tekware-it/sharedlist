@@ -19,7 +19,7 @@ const SETTINGS_KEY = "sharedlist.settings";
 export const DEFAULT_BACKEND_URL =
   __DEV__ ? "https://api.sharedlist.ovh" : "https://api.sharedlist.ovh";
 
-export const DEFAULT_HEALTH_INTERVAL_MS = 30000;
+export const DEFAULT_HEALTH_INTERVAL_MS = 3000;
 
 const DEFAULT_SETTINGS: AppSettings = {
   backendUrl: DEFAULT_BACKEND_URL,

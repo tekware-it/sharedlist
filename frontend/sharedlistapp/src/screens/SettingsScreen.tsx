@@ -1,5 +1,5 @@
 // src/screens/SettingsScreen.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import * as RNLocalize from "react-native-localize";
 import { useTranslation } from "react-i18next";
 
@@ -18,6 +18,7 @@ import {
   Modal,
   BackHandler,
   Switch,
+  InteractionManager,
 } from "react-native";
 
 import {
@@ -163,6 +164,42 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
       clearTimeout(handle);
     };
   }, [editBackendUrl, activeDialog]);
+
+//   useEffect(() => {
+//     if (Platform.OS !== "android") return;
+//
+//     const ref =
+//       activeDialog === "server" ? serverInputRef :
+//       activeDialog === "interval" ? intervalInputRef :
+//       null;
+//
+//     if (!ref) return;
+//
+//     // Android 7: meglio aspettare fine animazioni/layout
+//     const task = InteractionManager.runAfterInteractions(() => {
+//       setTimeout(() => {
+//         ref.current?.focus();
+//       }, 150);
+//     });
+//
+//     return () => task.cancel();
+//   }, [activeDialog]);
+
+  const serverInputRef = useRef<TextInput>(null);
+  const intervalInputRef = useRef<TextInput>(null);
+
+//   useEffect(() => {
+//     if (Platform.OS !== "android") return;
+//     if (activeDialog !== "interval") return;
+//
+//     // Android 7: spesso l'input risulta focused ma IME non parte.
+//     // Forziamo un reset del focus.
+//     const t = setTimeout(() => {
+//       intervalInputRef.current?.blur();
+//     }, 0);
+//
+//     return () => clearTimeout(t);
+//   }, [activeDialog]);
 
   function openServerDialog() {
     const initial = backendUrl || DEFAULT_BACKEND_URL;
@@ -318,6 +355,8 @@ function renderLanguageOption(
   const openLangDialog = () => setLangDialogVisible(true);
   const closeLangDialog = () => setLangDialogVisible(false);
 
+
+
   //
   // UI principale
   //
@@ -462,6 +501,9 @@ function renderLanguageOption(
             </View>
 
             <TextInput
+              ref={serverInputRef}
+              autoFocus={false}
+              keyboardType="url"
               style={styles.modalInput}
               value={editBackendUrl}
               onChangeText={setEditBackendUrl}
@@ -505,6 +547,8 @@ function renderLanguageOption(
               {t("settings.interval")}
             </Text>
             <TextInput
+              ref={intervalInputRef}
+              autoFocus={false}
               style={styles.modalInput}
               value={editHealthSec}
               onChangeText={setEditHealthSec}
