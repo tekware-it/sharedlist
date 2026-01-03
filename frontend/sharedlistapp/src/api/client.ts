@@ -1,5 +1,17 @@
 import { getBackendUrl } from "../storage/settingsStore";
 
+export class ApiError extends Error {
+  status: number;
+  body: string;
+
+  constructor(status: number, body: string) {
+    super(`HTTP ${status}: ${body}`);
+    this.status = status;
+    this.body = body;
+  }
+}
+
+
 
 export type ListMetaCipher = {
   list_id: string;
@@ -49,7 +61,7 @@ async function apiFetch(path: string, options: ApiOptions = {}): Promise<any> {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`HTTP ${res.status}: ${text}`);
+    throw new ApiError(res.status, text);
   }
 
   return res.status === 204 ? null : res.json();

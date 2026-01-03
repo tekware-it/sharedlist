@@ -18,31 +18,46 @@ import {
 } from "react-native";
 
 import {
+  loadStoredItems,
   mergeRemoteItemsIntoLocal,
+  saveStoredItems,
+  type StoredItemPlain,
   type RemoteItemSnapshot,
 } from "../storage/itemsStore";
-import type { ListItemPlain } from "../models/list";
+import type { ListItemPlain, ListMeta, FlagsDefinition } from "../models/list";
 
 import {
   loadStoredLists,
   saveStoredLists,
   removeStoredList,
+  upsertStoredList,
 } from "../storage/listsStore";
 import type { StoredList } from "../storage/types";
 import {
+  apiCreateItem,
+  apiCreateList,
   apiFetchItems,
   apiDeleteList,
   apiHealthz,
   apiGetList,
+  ApiError,
 } from "../api/client";
 import { getClientId } from "../storage/clientId";
 import { syncEvents } from "../events/syncEvents";
 import { loadSettings } from "../storage/settingsStore";
 
-import { decryptJson, type ListKey } from "../crypto/e2e";
-import type { ListMeta } from "../models/list";
+import { enqueueCreateList } from "../storage/syncQueue";
+
+import { decryptJson, encryptJson, type ListKey } from "../crypto/e2e";
+import { triggerSyncNow } from "../sync/syncWorker";
 
 const PLACEHOLDER_NAME = "Lista importata"; // sentinel nello storage (non tradurre)
+
+const fallbackFlagsDefinition: FlagsDefinition = {
+  checked: { label: "Preso", description: "Articolo gia acquistato" },
+  crossed: { label: "Da verificare", description: "Controllare qualcosa" },
+  highlighted: { label: "Importante", description: "Da non dimenticare" },
+};
 
 type ListWithStatus = StoredList & { hasRemoteChanges: boolean };
 
@@ -51,6 +66,111 @@ type Props = {
   onCreateNewList: () => void;
   onOpenSettings: () => void;
 };
+
+async function reinsertListNow(
+  list: ListWithStatus,
+  t: (k: string, o?: any) => string
+) {
+  const metaToSend: ListMeta = {
+    name: list.name ?? t("list.offline_title"),
+    flagsDefinition: fallbackFlagsDefinition,
+  };
+  const listKey = list.listKey as ListKey;
+  const enc = encryptJson(listKey, metaToSend);
+  const clientId = await getClientId();
+
+  try {
+    await apiCreateList({
+      listId: list.listId,
+      meta_ciphertext_b64: enc.ciphertextB64,
+      meta_nonce_b64: enc.nonceB64,
+      clientId,
+    });
+  } catch (e) {
+    if (e instanceof ApiError) {
+      const msg = e.message.toLowerCase();
+      const dup =
+        e.status === 409 ||
+        e.status === 400 ||
+        msg.includes("already exists") ||
+        msg.includes("duplicate");
+      if (!dup) throw e;
+    } else {
+      throw e;
+    }
+  }
+
+  const itemsRes = await apiFetchItems({ listId: list.listId });
+  if (itemsRes.items.length > 0) {
+    const plainForStore: StoredItemPlain[] = [];
+    for (const it of itemsRes.items) {
+      try {
+        const plain = decryptJson<ListItemPlain>(
+          listKey,
+          it.ciphertext_b64,
+          it.nonce_b64
+        );
+        plainForStore.push({
+          itemId: it.item_id,
+          label: plain.label,
+          flags: plain.flags,
+        });
+      } catch {
+        // ignore invalid items
+      }
+    }
+
+    await saveStoredItems(list.listId, plainForStore);
+  await upsertStoredList({
+    listId: list.listId,
+    listKey: list.listKey,
+    name: metaToSend.name,
+    pendingCreate: false,
+    removedFromServer: false,
+    lastRemoteRev: itemsRes.latest_rev ?? null,
+    lastSeenRev: itemsRes.latest_rev ?? null,
+  } as any);
+  syncEvents.emitListsChanged();
+  return;
+  }
+
+  const localItems = await loadStoredItems(list.listId);
+  const createdPlain: StoredItemPlain[] = [];
+  let latestRev: number | null = null;
+
+  for (const it of localItems) {
+    const encItem = encryptJson(listKey, {
+      label: it.label,
+      flags: it.flags,
+    });
+    const created = await apiCreateItem({
+      listId: list.listId,
+      ciphertext_b64: encItem.ciphertextB64,
+      nonce_b64: encItem.nonceB64,
+      clientId,
+    });
+    createdPlain.push({
+      itemId: created.item_id,
+      label: it.label,
+      flags: it.flags,
+    });
+    if (typeof created.rev === "number") {
+      latestRev = latestRev == null ? created.rev : Math.max(latestRev, created.rev);
+    }
+  }
+
+  await saveStoredItems(list.listId, createdPlain);
+  await upsertStoredList({
+    listId: list.listId,
+    listKey: list.listKey,
+    name: metaToSend.name,
+    pendingCreate: false,
+    removedFromServer: false,
+    lastRemoteRev: latestRev,
+    lastSeenRev: latestRev,
+  } as any);
+  syncEvents.emitListsChanged();
+}
 
 function parseSharedListDeepLink(text: string): {
   listId: string;
@@ -445,17 +565,89 @@ export const MyListsScreen: React.FC<Props> = ({
   //
   async function handleOpenList(list: ListWithStatus) {
     if (list.removedFromServer) {
-        Alert.alert(t("myLists.removed_from_server"),
-          [
-            { text: t("common.cancel"), style: "cancel" },
-            {
-              text: "Apri comunque",
-              onPress: () => onSelectList(list.listId, list.listKey),
+      Alert.alert(
+        t("myLists.removed_from_server"),
+        t(
+          "myLists.removed_from_server_msg",
+          "Questa lista non esiste piu sul server. Puoi aprirla solo in locale."
+        ),
+        [
+          { text: t("common.cancel"), style: "cancel" },
+          {
+            text: "Reinserisci sul server",
+            onPress: async () => {
+              try {
+                const online = await apiHealthz();
+                if (online) {
+                  await reinsertListNow(list, t);
+                  if (Platform.OS === "android") {
+                    ToastAndroid.show(
+                      "Reinserimento completato",
+                      ToastAndroid.SHORT
+                    );
+                  }
+                  return;
+                }
+
+                const metaToSend: ListMeta = {
+                  name: list.name ?? t("list.offline_title"),
+                  flagsDefinition: fallbackFlagsDefinition,
+                };
+
+                const enc = encryptJson(list.listKey as ListKey, metaToSend);
+
+                await enqueueCreateList({
+                  listId: list.listId,
+                  metaCiphertextB64: enc.ciphertextB64,
+                  metaNonceB64: enc.nonceB64,
+                });
+
+                await upsertStoredList({
+                  listId: list.listId,
+                  name: metaToSend.name,
+                  listKey: list.listKey,
+                  pendingCreate: true,
+                  removedFromServer: false,
+                } as any);
+                syncEvents.emitListsChanged();
+
+                triggerSyncNow().catch((err) =>
+                  console.warn("triggerSyncNow failed", err)
+                );
+
+                if (Platform.OS === "android") {
+                  ToastAndroid.show(
+                    t(
+                      "list.reinsert_queued",
+                      "Reinserimento messo in coda di sincronizzazione"
+                    ),
+                    ToastAndroid.SHORT
+                  );
+                }
+              } catch (e) {
+                console.warn("Reinsert list failed", e);
+                if (Platform.OS === "android") {
+                  ToastAndroid.show(
+                    t("myLists.remove_server_err", "Operazione non riuscita"),
+                    ToastAndroid.SHORT
+                  );
+                } else {
+                  Alert.alert(
+                    t("common.error", "Errore"),
+                    t("myLists.remove_server_err", "Operazione non riuscita")
+                  );
+                }
+              }
             },
-          ]
-        );
-        return;
-      }
+          },
+          {
+            text: "Apri comunque",
+            onPress: () => onSelectList(list.listId, list.listKey),
+          },
+        ]
+      );
+      return;
+    }
     try {
       const stored = await loadStoredLists();
       const updated: StoredList[] = stored.map((l) =>

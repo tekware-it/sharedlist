@@ -29,6 +29,7 @@ import {
   startForegroundSyncWorker,
   stopForegroundSyncWorker,
 } from "./src/sync/healthAndSyncWorker";
+import { startSyncWorker } from "./src/sync/syncWorker";
 
 type RootStackParamList = {
   MyLists: undefined;
@@ -73,6 +74,7 @@ export default function App() {
     startForegroundSyncWorker().catch((e) =>
       console.warn("[App] initial startForegroundSyncWorker failed", e)
     );
+    startSyncWorker();
 
     return () => {
       sub.remove();

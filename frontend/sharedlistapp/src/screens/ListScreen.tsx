@@ -23,6 +23,7 @@ import {
   apiCreateItem,
   apiUpdateItem,
   apiDeleteItem,
+  ApiError,
 } from "../api/client";
 import { decryptJson, encryptJson, ListKey } from "../crypto/e2e";
 import type { ListMeta, ListItemPlain, FlagsDefinition } from "../models/list";
@@ -31,6 +32,7 @@ import { getClientId } from "../storage/clientId";
 import {
   updateLastSeenRev,
   loadStoredLists,
+  upsertStoredList,
 } from "../storage/listsStore";
 import {
   loadQueue,
@@ -80,6 +82,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const [meta, setMeta] = useState<ListMeta | null>(null);
   const [items, setItems] = useState<ItemView[]>([]);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+  const [removedFromServer, setRemovedFromServer] = useState(false);
 
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
@@ -135,6 +138,16 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     };
   }, [items]);
 
+  function buildStoredItemsFromViews(list: ItemView[]): StoredItemPlain[] {
+    return list
+      .filter((it) => it.plaintext)
+      .map((it) => ({
+        itemId: it.item_id ?? null,
+        label: it.plaintext!.label,
+        flags: it.plaintext!.flags,
+      }));
+  }
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -153,6 +166,8 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       setLoading(true);
       setError(null);
 
+      let foundList: any | undefined;
+
       //
       // 1) OFFLINE-FIRST: mostra subito ciò che hai in locale
       //
@@ -161,7 +176,8 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
         const storedLists = await loadStoredLists();
         if (cancelled) return;
 
-        const foundList = storedLists.find((l) => l.listId === listId);
+        foundList = storedLists.find((l) => l.listId === listId);
+        setRemovedFromServer(!!foundList?.removedFromServer);
         const offlineMeta: ListMeta = {
           name: foundList?.name ?? t("list.offline_title"),
           flagsDefinition: fallbackFlagsDefinition,
@@ -232,6 +248,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           metaRes.meta_nonce_b64
         );
         setMeta(metaPlain);
+        setRemovedFromServer(false);
 
         const itemsRes = await apiFetchItems({ listId });
         if (cancelled) return;
@@ -299,6 +316,16 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           console.warn("saveStoredItems after online refresh failed", err)
         );
       } catch (e: any) {
+        // Lista rimossa dal server (ma presente in locale): chiedi cosa fare
+        if (e instanceof ApiError && (e.status === 404 || e.status === 410)) {
+          await upsertStoredList({
+            listId,
+            removedFromServer: true,
+          } as any);
+          setRemovedFromServer(true);
+          return;
+        }
+
         console.warn("[ListScreen] online refresh failed", e);
         // se vuoi, qui puoi fare setError(t("list.server_unreachable"));
         // ma NON rimettiamo lo spinner: l'utente vede i dati offline.
@@ -365,6 +392,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           // 2) marcare la rev remota come "vista" se questa lista è ancora presente
           const lists = await loadStoredLists();
           const current = lists.find((l) => l.listId === listId);
+          setRemovedFromServer(!!current?.removedFromServer);
           if (current?.lastRemoteRev != null) {
             await updateLastSeenRev(listId, current.lastRemoteRev);
           }
@@ -499,8 +527,6 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
 
     setCreatingItem(true);
     try {
-      const clientId = await getClientId();
-
       const plain: ListItemPlain = {
         label: trimmed,
         flags: {
@@ -510,6 +536,28 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
         },
       };
 
+      if (removedFromServer) {
+        setItems((prev) => {
+          const updated = [
+            ...prev,
+            {
+              localId: `local-${Date.now()}-${Math.random()}`,
+              item_id: null,
+              plaintext: plain,
+            },
+          ];
+
+          saveStoredItems(listId, buildStoredItemsFromViews(updated)).catch(
+            (err) => console.warn("saveStoredItems after local add failed", err)
+          );
+          return updated;
+        });
+
+        setNewLabel("");
+        return;
+      }
+
+      const clientId = await getClientId();
       const { ciphertextB64, nonceB64 } = encryptJson(listKey, plain);
 
       try {
@@ -627,6 +675,24 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
         [flag]: !basePlain.flags[flag],
       },
     };
+
+    if (removedFromServer) {
+      setItems((prev) => {
+        const updatedList = prev.map((it) =>
+          it.localId === target.localId
+            ? { ...it, plaintext: updatedPlain }
+            : it
+        );
+
+        saveStoredItems(listId, buildStoredItemsFromViews(updatedList)).catch(
+          (err) =>
+            console.warn("saveStoredItems after local flag update failed", err)
+        );
+
+        return updatedList;
+      });
+      return;
+    }
 
     const { ciphertextB64, nonceB64 } = encryptJson(listKey, updatedPlain);
 
@@ -752,6 +818,27 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           style: "destructive",
           onPress: () => {
             (async () => {
+              // Caso 1: item creato offline e mai sincronizzato
+              if (removedFromServer) {
+                if (target.pendingOpId) {
+                  await removeOperations([target.pendingOpId]);
+                }
+                setItems((prev) => {
+                  const updatedList = prev.filter(
+                    (it) => it.localId !== target.localId
+                  );
+                  saveStoredItems(listId, buildStoredItemsFromViews(updatedList)).catch(
+                    (err) =>
+                      console.warn(
+                        "saveStoredItems after local delete failed",
+                        err
+                      )
+                  );
+                  return updatedList;
+                });
+                return;
+              }
+
               // Caso 1: item creato offline e mai sincronizzato
               if (target.pendingCreate && target.pendingOpId) {
                 await removeOperations([target.pendingOpId]);

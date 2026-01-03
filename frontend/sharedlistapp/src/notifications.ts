@@ -1,6 +1,7 @@
 // src/notifications.ts
 import { Platform, PermissionsAndroid } from "react-native";
 import PushNotification from "react-native-push-notification";
+import i18n from "./i18n";
 
 const CHANNEL_ID = "sharedlist-changes";
 

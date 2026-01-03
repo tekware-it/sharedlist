@@ -17,6 +17,7 @@ import { syncEvents } from "../events/syncEvents";
 import { itemSyncEvents } from "../events/itemSyncEvents";
 
 let timerId: ReturnType<typeof setInterval> | null = null;
+let running = false;
 
 // Avviato una sola volta in App.tsx
 export function startSyncWorker() {
@@ -25,7 +26,13 @@ export function startSyncWorker() {
   timerId = setInterval(runSyncOnce, 15000);
 }
 
+export async function triggerSyncNow() {
+  await runSyncOnce();
+}
+
 async function runSyncOnce() {
+  if (running) return;
+  running = true;
   try {
     const online = await apiHealthz();
     if (!online) return;
@@ -97,6 +104,16 @@ async function runSyncOnce() {
         if (msg.includes("Too many requests")) {
           // non intasiamo il server, fermiamo il batch
           break;
+        } else if (
+          op.type === "create_list" &&
+          (msg.includes("already exists") ||
+            msg.includes("duplicate key") ||
+            msg.includes("lists_pkey"))
+        ) {
+          // La lista esiste gia sul server: consideriamo l'operazione riuscita
+          await markListSynced(op.listId);
+          syncEvents.emitListSynced(op.listId);
+          processedIds.push(op.id);
         } else if (msg.includes("Item not found")) {
             console.warn("Item not found", op.id );
             processedIds.push(op.id);
@@ -110,5 +127,7 @@ async function runSyncOnce() {
     }
   } catch (e) {
     console.warn("Sync worker error", e);
+  } finally {
+    running = false;
   }
 }

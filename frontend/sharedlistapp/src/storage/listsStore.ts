@@ -10,24 +10,44 @@ export async function loadStoredLists(): Promise<StoredList[]> {
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return [];
 
-      return parsed.map((l: any) => {
-        const lastSeen =
-          typeof l.lastSeenRev === "number" ? l.lastSeenRev : null;
-        const lastRemote =
-          typeof l.lastRemoteRev === "number"
-            ? l.lastRemoteRev
-            : lastSeen; // default: allineato al visto
+      return parsed
+        .filter((l: any) => {
+          const listId = l?.listId;
+          const listKey = l?.listKey;
+          if (typeof listId !== "string" && typeof listId !== "number") {
+            return false;
+          }
+          if (typeof listKey !== "string" && typeof listKey !== "number") {
+            return false;
+          }
+          const idStr = String(listId);
+          const keyStr = String(listKey);
+          if (!idStr || idStr === "undefined" || idStr === "null") {
+            return false;
+          }
+          if (!keyStr || keyStr === "undefined" || keyStr === "null") {
+            return false;
+          }
+          return true;
+        })
+        .map((l: any) => {
+          const lastSeen =
+            typeof l.lastSeenRev === "number" ? l.lastSeenRev : null;
+          const lastRemote =
+            typeof l.lastRemoteRev === "number"
+              ? l.lastRemoteRev
+              : lastSeen; // default: allineato al visto
 
-        return {
-          listId: String(l.listId),
-          listKey: String(l.listKey),
-          name: String(l.name ?? "Lista senza nome"),
-          lastSeenRev: lastSeen,
-          lastRemoteRev: lastRemote,
-          pendingCreate: !!l.pendingCreate,
-          removedFromServer: !!l.removedFromServer,
-        } as StoredList;
-      });
+          return {
+            listId: String(l.listId),
+            listKey: String(l.listKey),
+            name: String(l.name ?? "Lista senza nome"),
+            lastSeenRev: lastSeen,
+            lastRemoteRev: lastRemote,
+            pendingCreate: !!l.pendingCreate,
+            removedFromServer: !!l.removedFromServer,
+          } as StoredList;
+        });
     } catch {
       return [];
     }
@@ -70,7 +90,7 @@ export async function markListSynced(listId: string): Promise<void> {
   const current = await loadStoredLists();
   const idx = current.findIndex((l) => l.listId === listId);
   if (idx >= 0) {
-    current[idx] = { ...current[idx], pendingCreate: false };
+    current[idx] = { ...current[idx], pendingCreate: false, removedFromServer: false };
     await saveStoredLists(current);
   }
 }

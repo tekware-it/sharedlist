@@ -80,6 +80,9 @@ export async function runHealthAndSyncOnce(): Promise<string[]> {
     const updated: StoredList[] = [];
 
     for (const l of stored) {
+      if (!l.listId || l.listId === "undefined" || l.listId === "null") {
+        continue;
+      }
       let newL: StoredList = {
         ...l,
         removedFromServer: l.removedFromServer ?? false,
