@@ -81,7 +81,9 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
 
   const [meta, setMeta] = useState<ListMeta | null>(null);
   const [items, setItems] = useState<ItemView[]>([]);
-  const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+  const [backendOnline, setBackendOnline] = useState<boolean | null>(
+    syncEvents.getHealth()
+  );
   const [removedFromServer, setRemovedFromServer] = useState(false);
 
   const headerHeight = useHeaderHeight();
@@ -525,6 +527,12 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     const trimmed = newLabel.trim();
     if (!trimmed) return;
 
+    console.log("[ListScreen] add item", {
+      listId,
+      label: trimmed,
+      online: backendOnline,
+    });
+
     setCreatingItem(true);
     try {
       const plain: ListItemPlain = {
@@ -568,6 +576,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           nonce_b64: nonceB64,
           clientId,
         });
+        console.log("[ListScreen] add item online ok", listId, created.item_id);
 
         setItems((prev) => {
           const existingIndex = prev.findIndex(
@@ -623,12 +632,14 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
 
       } catch (e: any) {
         console.warn("Create item failed, queueing for sync", e?.message ?? e);
+        console.warn("[ListScreen] add item offline", listId, e?.message ?? e);
 
         const op = await enqueueCreateItem({
           listId,
           ciphertextB64,
           nonceB64,
         });
+        console.log("[ListScreen] enqueued create_item", op.id, listId);
 
         setItems((prev) => [
           ...prev,
@@ -1058,21 +1069,21 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
                           <TouchableOpacity
                             style={[
                               styles.flagChip,
-                              flags.crossed && styles.flagChipActive,
-                            ]}
-                            onPress={() => handleToggleFlag(item, "crossed")}
-                          >
-                            <Text style={styles.flagChipText}>❓</Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            style={[
-                              styles.flagChip,
                               flags.highlighted && styles.flagChipActive,
                             ]}
                             onPress={() => handleToggleFlag(item, "highlighted")}
                           >
                             <Text style={styles.flagChipText}>⭐</Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={[
+                              styles.flagChip,
+                              flags.crossed && styles.flagChipActive,
+                            ]}
+                            onPress={() => handleToggleFlag(item, "crossed")}
+                          >
+                            <Text style={styles.flagChipText}>❓</Text>
                           </TouchableOpacity>
                         </View>
                       )}

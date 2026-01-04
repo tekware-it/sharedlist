@@ -78,6 +78,10 @@ export async function enqueueCreateList(params: {
   };
 
   const queue = await loadQueue();
+  const perListCount = queue.filter(
+    (q) => q.type === "create_item" && q.listId === listId
+  ).length;
+  console.log("[SyncQueue] create_item count for list", listId, perListCount);
   queue.push(op);
   await saveQueue(queue);
   return op;
@@ -89,6 +93,11 @@ export async function enqueueCreateItem(params: {
   nonceB64: string;
 }): Promise<PendingCreateItemOp> {
   const { listId, ciphertextB64, nonceB64 } = params;
+  console.log("[SyncQueue] enqueue create_item", {
+    listId,
+    ciphertextLen: ciphertextB64.length,
+    nonceLen: nonceB64.length,
+  });
   const op: PendingCreateItemOp = {
     id: String(uuid.v4()),
     type: "create_item",
@@ -99,8 +108,14 @@ export async function enqueueCreateItem(params: {
   };
 
   const queue = await loadQueue();
+  const perListCount = queue.filter(
+    (q) => q.type === "create_item" && q.listId === listId
+  ).length;
+  console.log("[SyncQueue] create_item count for list", listId, perListCount);
+  console.log("[SyncQueue] queue before enqueue", queue.length);
   queue.push(op);
   await saveQueue(queue);
+  console.log("[SyncQueue] queued create_item", op.id, "total", queue.length);
   return op;
 }
 
@@ -122,6 +137,10 @@ export async function enqueueUpdateItem(params: {
   };
 
   const queue = await loadQueue();
+  const perListCount = queue.filter(
+    (q) => q.type === "create_item" && q.listId === listId
+  ).length;
+  console.log("[SyncQueue] create_item count for list", listId, perListCount);
   queue.push(op);
   await saveQueue(queue);
   return op;
@@ -141,6 +160,10 @@ export async function enqueueDeleteItem(params: {
   };
 
   const queue = await loadQueue();
+  const perListCount = queue.filter(
+    (q) => q.type === "create_item" && q.listId === listId
+  ).length;
+  console.log("[SyncQueue] create_item count for list", listId, perListCount);
   queue.push(op);
   await saveQueue(queue);
   return op;
@@ -149,8 +172,10 @@ export async function enqueueDeleteItem(params: {
 export async function removeOperations(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
   const queue = await loadQueue();
+  console.log("[SyncQueue] remove ops", ids.length, "before", queue.length);
   const filtered = queue.filter((op) => !ids.includes(op.id));
   await saveQueue(filtered);
+  console.log("[SyncQueue] remove ops done", "after", filtered.length);
 }
 
 /**

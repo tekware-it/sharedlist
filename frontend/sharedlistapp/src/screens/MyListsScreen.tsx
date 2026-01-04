@@ -261,7 +261,9 @@ export const MyListsScreen: React.FC<Props> = ({
 
   const [lists, setLists] = useState<ListWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
-  const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+  const [backendOnline, setBackendOnline] = useState<boolean | null>(
+    syncEvents.getHealth()
+  );
   const [importDialogVisible, setImportDialogVisible] = useState(false);
   const [importLinkText, setImportLinkText] = useState("");
 

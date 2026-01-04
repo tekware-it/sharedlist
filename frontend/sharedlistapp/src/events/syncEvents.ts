@@ -17,6 +17,7 @@ class SyncEventBus {
 
   // stato health del backend (true = online, false = offline)
   private healthListeners: HealthHandler[] = [];
+  private lastHealth: boolean | null = null;
 
   /**
    * Sottoscrizione storica: eventi "listSynced".
@@ -60,13 +61,21 @@ class SyncEventBus {
    */
   subscribeHealth(handler: HealthHandler): () => void {
     this.healthListeners.push(handler);
+    if (this.lastHealth !== null) {
+      handler(this.lastHealth);
+    }
     return () => {
       this.healthListeners = this.healthListeners.filter((h) => h !== handler);
     };
   }
 
   emitHealth(ok: boolean) {
+    this.lastHealth = ok;
     this.healthListeners.forEach((h) => h(ok));
+  }
+
+  getHealth(): boolean | null {
+    return this.lastHealth;
   }
 }
 
