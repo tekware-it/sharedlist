@@ -1,5 +1,6 @@
 // src/notifications.ts
 import { Platform, PermissionsAndroid } from "react-native";
+import messaging from "@react-native-firebase/messaging";
 import PushNotification from "react-native-push-notification";
 import i18n from "./i18n";
 
@@ -19,6 +20,20 @@ export async function initNotifications() {
       );
     } catch (e) {
       console.warn("POST_NOTIFICATIONS permission request failed", e);
+    }
+  }
+
+  // iOS: registra device + chiede permesso per notifiche remote
+  if (Platform.OS === "ios") {
+    try {
+      await messaging().registerDeviceForRemoteMessages();
+      await messaging().requestPermission();
+      const apnsToken = await messaging().getAPNSToken();
+      const fcmToken = await messaging().getToken();
+      console.log("[Push] iOS APNs token:", apnsToken);
+      console.log("[Push] iOS FCM token:", fcmToken);
+    } catch (e) {
+      console.warn("[Push] iOS permission/register failed", e);
     }
   }
 
