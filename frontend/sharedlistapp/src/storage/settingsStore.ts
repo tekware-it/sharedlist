@@ -2,6 +2,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export type LanguageOption = "system" | "it" | "en";
+export type ThemeMode = "system" | "light" | "dark";
 
 export type AppSettings = {
   backendUrl: string;
@@ -9,6 +10,7 @@ export type AppSettings = {
   notificationsEnabled: boolean;
   backgroundSyncEnabled: boolean;
   language: LanguageOption;
+  themeMode: ThemeMode;
 };
 
 export type Settings = AppSettings;
@@ -27,6 +29,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   notificationsEnabled: true,
   backgroundSyncEnabled: true,
   language: "system",
+  themeMode: "system",
 };
 
 export async function loadSettings(): Promise<AppSettings> {
@@ -45,6 +48,7 @@ export async function loadSettings(): Promise<AppSettings> {
       backgroundSyncEnabled:
         parsed.backgroundSyncEnabled ?? DEFAULT_SETTINGS.backgroundSyncEnabled,
       language: parsed.language ?? DEFAULT_SETTINGS.language,
+      themeMode: parsed.themeMode ?? DEFAULT_SETTINGS.themeMode,
     };
   } catch {
     return DEFAULT_SETTINGS;

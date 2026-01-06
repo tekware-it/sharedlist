@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import { enqueueCreateList } from "../storage/syncQueue";
 import { generateListKey, encryptJson, ListKey } from "../crypto/e2e";
 import { subscribeToListPush } from "../push/subscribe";
 import { syncEvents } from "../events/syncEvents";
+import { useTheme, type ThemeColors } from "../theme";
 
 type Props = {
   onCreated: (listId: string, listKey: string) => void;
@@ -48,9 +49,12 @@ function makeDefaultListName(): string {
 
 export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
   const { t } = useTranslation();
+  const { colors } = useTheme();
 
   const [name, setName] = useState<string>(() => makeDefaultListName());
   const [creating, setCreating] = useState(false);
+
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   useEffect(() => {
       const sub = BackHandler.addEventListener(
@@ -152,12 +156,13 @@ export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
         value={name}
         onChangeText={setName}
         placeholder="Es. Spesa di casa"
+        placeholderTextColor={colors.mutedText}
       />
 
       <View style={styles.buttonRow}>
         {creating ? (
           <View style={styles.loadingRow}>
-            <ActivityIndicator />
+            <ActivityIndicator color={colors.primary} />
             <Text style={styles.loadingText}>Creazione in corso...</Text>
           </View>
         ) : (
@@ -168,19 +173,41 @@ export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 64, paddingHorizontal: 16 },
-  title: { fontSize: 24, fontWeight: "700", marginBottom: 8 },
-  subtitle: { fontSize: 14, color: "#555", marginBottom: 24 },
-  label: { fontSize: 14, marginBottom: 4 },
-  input: {
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    marginBottom: 16,
-  },
-  buttonRow: { marginTop: 8 },
-  loadingRow: { flexDirection: "row", alignItems: "center" },
-  loadingText: { marginLeft: 8 },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      paddingTop: 64,
+      paddingHorizontal: 16,
+      backgroundColor: colors.background,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: "700",
+      marginBottom: 8,
+      color: colors.text,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: colors.mutedText,
+      marginBottom: 24,
+    },
+    label: {
+      fontSize: 14,
+      marginBottom: 4,
+      color: colors.text,
+    },
+    input: {
+      borderWidth: 1,
+      borderRadius: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 8,
+      marginBottom: 16,
+      borderColor: colors.inputBorder,
+      backgroundColor: colors.inputBackground,
+      color: colors.text,
+    },
+    buttonRow: { marginTop: 8 },
+    loadingRow: { flexDirection: "row", alignItems: "center" },
+    loadingText: { marginLeft: 8, color: colors.text },
+  });

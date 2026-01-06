@@ -1,6 +1,6 @@
 import "react-native-get-random-values";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   AppState,
@@ -15,6 +15,8 @@ import {
   NavigationContainer,
   createNavigationContainerRef,
   StackActions,
+  DefaultTheme,
+  DarkTheme,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
@@ -25,11 +27,13 @@ import { SettingsScreen } from "./src/screens/SettingsScreen";
 
 import { parseSharedListUrl } from "./src/linking/sharedListLink";
 import { upsertStoredList } from "./src/storage/listsStore";
+import { loadSettings, type ThemeMode } from "./src/storage/settingsStore";
 import {
   startForegroundSyncWorker,
   stopForegroundSyncWorker,
 } from "./src/sync/healthAndSyncWorker";
 import { startSyncWorker } from "./src/sync/syncWorker";
+import { ThemeContext, useResolvedTheme } from "./src/theme";
 
 type RootStackParamList = {
   MyLists: undefined;
@@ -43,6 +47,8 @@ const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 export default function App() {
   const [ready, setReady] = useState(false);
+  const [themeMode, setThemeMode] = useState<ThemeMode>("system");
+  const { scheme, colors } = useResolvedTheme(themeMode);
 
   // Se arriva un deep link prima che la NavigationContainer sia pronta
   const pendingLinkRef = useRef<{ listId: string; listKey: string } | null>(
@@ -79,6 +85,23 @@ export default function App() {
     return () => {
       sub.remove();
       stopForegroundSyncWorker();
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const s = await loadSettings();
+        if (!cancelled) {
+          setThemeMode(s.themeMode ?? "system");
+        }
+      } catch (e) {
+        console.warn("[App] loadSettings failed", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -136,9 +159,25 @@ export default function App() {
     };
   }, []);
 
+  const navThemeBase = scheme === "dark" ? DarkTheme : DefaultTheme;
+  const navTheme = useMemo(
+    () => ({
+      ...navThemeBase,
+      colors: {
+        ...navThemeBase.colors,
+        background: colors.background,
+        card: colors.card,
+        text: colors.text,
+        border: colors.border,
+        primary: colors.primary,
+      },
+    }),
+    [navThemeBase, colors]
+  );
+
   if (!ready) {
     return (
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
         <View
           style={{
             flex: 1,
@@ -148,7 +187,7 @@ export default function App() {
           }}
         >
           <ActivityIndicator />
-          <Text>Avvio SharedList...</Text>
+          <Text style={{ color: colors.text }}>Avvio SharedList...</Text>
         </View>
       </SafeAreaView>
     );
@@ -192,48 +231,53 @@ export default function App() {
   );
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <NavigationContainer
-        ref={navigationRef}
-        onReady={() => {
-          const pending = pendingLinkRef.current;
-          if (pending) {
-            pendingLinkRef.current = null;
-            navigationRef.navigate("List", {
-              listId: pending.listId,
-              listKey: pending.listKey,
-            });
-          }
-        }}
-      >
-        <Stack.Navigator
-          initialRouteName="MyLists"
-          screenOptions={{
-              headerShown: Platform.OS === "ios", // iOS: header con back; Android: niente barra
-            }}
+    <ThemeContext.Provider
+      value={{ mode: themeMode, scheme, colors, setMode: setThemeMode }}
+    >
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <NavigationContainer
+          theme={navTheme}
+          ref={navigationRef}
+          onReady={() => {
+            const pending = pendingLinkRef.current;
+            if (pending) {
+              pendingLinkRef.current = null;
+              navigationRef.navigate("List", {
+                listId: pending.listId,
+                listKey: pending.listKey,
+              });
+            }
+          }}
         >
-          <Stack.Screen
-            name="MyLists"
-            component={MyListsNavScreen}
-            options={{ title: "Le mie liste" }}
-          />
-          <Stack.Screen
-            name="CreateList"
-            component={CreateListNavScreen}
-            options={{ title: "Nuova lista" }}
-          />
-          <Stack.Screen
-            name="List"
-            component={ListNavScreen as any}
-            options={{ title: "Lista" }}
-          />
-          <Stack.Screen
-            name="Settings"
-            component={SettingsNavScreen}
-            options={{ title: "Impostazioni" }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </GestureHandlerRootView>
+          <Stack.Navigator
+            initialRouteName="MyLists"
+            screenOptions={{
+                headerShown: Platform.OS === "ios", // iOS: header con back; Android: niente barra
+              }}
+          >
+            <Stack.Screen
+              name="MyLists"
+              component={MyListsNavScreen}
+              options={{ title: "Le mie liste" }}
+            />
+            <Stack.Screen
+              name="CreateList"
+              component={CreateListNavScreen}
+              options={{ title: "Nuova lista" }}
+            />
+            <Stack.Screen
+              name="List"
+              component={ListNavScreen as any}
+              options={{ title: "Lista" }}
+            />
+            <Stack.Screen
+              name="Settings"
+              component={SettingsNavScreen}
+              options={{ title: "Impostazioni" }}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </GestureHandlerRootView>
+    </ThemeContext.Provider>
   );
 }

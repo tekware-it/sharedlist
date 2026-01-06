@@ -58,6 +58,8 @@
   "settings.notifications_desc": "Manage push notifications and background list updates.",
   "settings.language": "Language",
   "settings.language_desc": "Choose the app language.",
+  "settings.theme": "Theme",
+  "settings.theme_desc": "Choose light, dark, or system.",
   "settings.notifications_dialog_title": "Notifications",
   "settings.enable_notifications": "Enable notifications",
   "settings.enable_notifications_help": "Show push notifications when a shared list changes.",
@@ -68,6 +70,10 @@
   "settings.language_option_system_desc": "Use the device language.",
   "settings.language_option_it": "Italian",
   "settings.language_option_en": "English",
+  "settings.theme_dialog_title": "Theme",
+  "settings.theme_option_system": "System",
+  "settings.theme_option_light": "Light",
+  "settings.theme_option_dark": "Dark",
   "list.title_fallback": "List",
   "list.offline_title": "Offline list",
   "list.backend_unknown": "Backend status not checked yet.",
@@ -87,5 +93,6 @@
   "notifications.channel_name": "SharedList updates",
   "notifications.one_updated": "A shared list was updated.",
   "notifications.many_updated": "{{count}} shared lists were updated.",
-  "settings.save_language_failed": "Couldn't update the language."
+  "settings.save_language_failed": "Couldn't update the language.",
+  "settings.save_theme_failed": "Couldn't update the theme."
 }

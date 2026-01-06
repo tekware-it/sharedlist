@@ -1,5 +1,5 @@
 // src/screens/SettingsScreen.tsx
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as RNLocalize from "react-native-localize";
 import { useTranslation } from "react-i18next";
 
@@ -27,7 +27,10 @@ import {
   DEFAULT_BACKEND_URL,
   DEFAULT_HEALTH_INTERVAL_MS,
   type Settings,
+  type LanguageOption,
+  type ThemeMode,
 } from "../storage/settingsStore";
+import { useTheme, type ThemeColors } from "../theme";
 
 import {
   unsubscribeFromAllListsPush,
@@ -44,10 +47,9 @@ const APP_VERSION = "0.1.0"; // allinea a package.json se vuoi
 
 type ActiveDialog = "none" | "server" | "interval";
 type BackendTestStatus = "idle" | "testing" | "online" | "offline";
-type LanguageOption = "system" | "it" | "en";
-
 export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
   const { t, i18n } = useTranslation();
+  const { colors, setMode } = useTheme();
   const [backendUrl, setBackendUrl] = useState("");
   const [healthIntervalSec, setHealthIntervalSec] = useState("30");
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -58,6 +60,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
   const [editBackendUrl, setEditBackendUrl] = useState("");
   const [editHealthSec, setEditHealthSec] = useState("");
   const [langDialogVisible, setLangDialogVisible] = useState(false);
+  const [themeDialogVisible, setThemeDialogVisible] = useState(false);
 
   const [backendTestStatus, setBackendTestStatus] =
     useState<BackendTestStatus>("idle");
@@ -214,10 +217,19 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
     setActiveDialog("interval");
   }
 
+  async function saveSettingsAndUpdate(patch: Partial<Settings>) {
+    const next = await saveSettings(patch);
+    setSettings(next);
+    if (patch.themeMode != null) {
+      setMode(next.themeMode);
+    }
+    return next;
+  }
+
   async function handleSaveServer() {
     const trimmed = editBackendUrl.trim() || DEFAULT_BACKEND_URL;
     try {
-      await saveSettings({ backendUrl: trimmed });
+      await saveSettingsAndUpdate({ backendUrl: trimmed });
       setBackendUrl(trimmed);
       setActiveDialog("none");
       if (Platform.OS === "android") {
@@ -238,7 +250,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
     }
     const ms = sec * 1000;
     try {
-      await saveSettings({ healthCheckIntervalMs: ms });
+      await saveSettingsAndUpdate({ healthCheckIntervalMs: ms });
       setHealthIntervalSec(String(sec));
       setActiveDialog("none");
       if (Platform.OS === "android") {
@@ -286,11 +298,22 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
     }
   }
 
+    function themeLabel(mode: ThemeMode): string {
+    switch (mode) {
+      case "light":
+        return t("settings.theme_option_light");
+      case "dark":
+        return t("settings.theme_option_dark");
+      case "system":
+      default:
+        return t("settings.theme_option_system");
+    }
+  }
+
 
     async function changeLanguage(lang: LanguageOption) {
     try {
-      const next = await saveSettings({ language: lang });
-      setSettings(next);
+      const next = await saveSettingsAndUpdate({ language: lang });
 
       if (lang === "system") {
         const locales = RNLocalize.getLocales();
@@ -336,9 +359,36 @@ function renderLanguageOption(
       );
     }
 
+  async function changeTheme(mode: ThemeMode) {
+    try {
+      await saveSettingsAndUpdate({ themeMode: mode });
+      setThemeDialogVisible(false);
+    } catch (e) {
+      console.error(e);
+      Alert.alert(t("common.error_title"), t("settings.save_theme_failed"));
+    }
+  }
+
+  function renderThemeOption(value: ThemeMode, label: string) {
+    const selected = settings?.themeMode === value;
+    return (
+      <TouchableOpacity
+        key={value}
+        style={styles.modalRow}
+        onPress={() => changeTheme(value)}
+      >
+        <View style={styles.modalRowText}>
+          <Text style={styles.rowLabel}>{label}</Text>
+        </View>
+        <View style={styles.langRadioOuter}>
+          {selected ? <View style={styles.langRadioInner} /> : null}
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
   async function applySettingsAndMaybeResub(patch: Partial<Settings>) {
-      const next = await saveSettings(patch);
-      setSettings(next);
+      const next = await saveSettingsAndUpdate(patch);
 
       // se entrambi falsi -> unsubscribe da tutte le liste
       if (!next.notificationsEnabled && !next.backgroundSyncEnabled) {
@@ -355,6 +405,11 @@ function renderLanguageOption(
   const openLangDialog = () => setLangDialogVisible(true);
   const closeLangDialog = () => setLangDialogVisible(false);
 
+  const openThemeDialog = () => setThemeDialogVisible(true);
+  const closeThemeDialog = () => setThemeDialogVisible(false);
+
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
 
 
   //
@@ -364,7 +419,7 @@ function renderLanguageOption(
     return (
       <View style={styles.center}>
         <ActivityIndicator />
-        <Text>Carico le impostazioni...</Text>
+        <Text style={{ color: colors.text }}>Carico le impostazioni...</Text>
       </View>
     );
   }
@@ -415,6 +470,17 @@ function renderLanguageOption(
           </View>
         </TouchableOpacity>
 
+        <TouchableOpacity onPress={openThemeDialog}>
+          <View style={styles.row}>
+            <Text style={styles.rowTitle}>{t("settings.theme")}</Text>
+            <Text style={styles.rowValue}>
+              {themeLabel(
+                (settings.themeMode ?? "system") as ThemeMode
+              )}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
         <TouchableOpacity onPress={handleInfo}>
           <View style={styles.row}>
             <Text style={styles.rowTitle}>{t("settings.info")}</Text>
@@ -453,6 +519,35 @@ function renderLanguageOption(
               <TouchableOpacity
                 style={styles.modalButton}
                 onPress={closeLangDialog}
+              >
+                <Text style={styles.modalButtonText}>{t("common.close")}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Dialog Tema */}
+      <Modal
+        transparent
+        visible={themeDialogVisible}
+        animationType="fade"
+        presentationStyle="overFullScreen"
+        supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
+        onRequestClose={closeThemeDialog}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t("settings.theme_dialog_title")}</Text>
+
+            {renderThemeOption("system", t("settings.theme_option_system"))}
+            {renderThemeOption("light", t("settings.theme_option_light"))}
+            {renderThemeOption("dark", t("settings.theme_option_dark"))}
+
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={closeThemeDialog}
               >
                 <Text style={styles.modalButtonText}>{t("common.close")}</Text>
               </TouchableOpacity>
@@ -510,6 +605,7 @@ function renderLanguageOption(
               autoCapitalize="none"
               autoCorrect={false}
               placeholder={DEFAULT_BACKEND_URL}
+              placeholderTextColor={colors.mutedText}
             />
 
             <View style={styles.modalButtonsRow}>
@@ -554,6 +650,7 @@ function renderLanguageOption(
               onChangeText={setEditHealthSec}
               keyboardType="numeric"
               placeholder={String(DEFAULT_HEALTH_INTERVAL_MS / 1000)}
+              placeholderTextColor={colors.mutedText}
             />
             <View style={styles.modalButtonsRow}>
               <TouchableOpacity
@@ -634,108 +731,131 @@ function renderLanguageOption(
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 48, paddingHorizontal: 16 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      paddingTop: 48,
+      paddingHorizontal: 16,
+      backgroundColor: colors.background,
+    },
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.background,
+    },
 
-  headerRow: {
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
+    headerRow: {
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: colors.text,
+    },
 
-  scrollContent: {
-    paddingBottom: 32,
-  },
+    scrollContent: {
+      paddingBottom: 32,
+    },
 
-  row: {
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: "#ddd",
-  },
-  rowTitle: {
-    fontSize: 16,
-    fontWeight: "500",
-    marginBottom: 4,
-  },
-  rowValue: {
-    fontSize: 13,
-    color: "#555",
-  },
-  rowValueMuted: {
-    fontSize: 13,
-    color: "#999",
-  },
+    row: {
+      paddingVertical: 14,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    rowTitle: {
+      fontSize: 16,
+      fontWeight: "500",
+      marginBottom: 4,
+      color: colors.text,
+    },
+    rowValue: {
+      fontSize: 13,
+      color: colors.mutedText,
+    },
+    rowValueMuted: {
+      fontSize: 13,
+      color: colors.mutedText,
+    },
+    rowDescription: {
+      fontSize: 13,
+      color: colors.mutedText,
+    },
 
-  // modal
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    width: "85%",
-    backgroundColor: "white",
-    borderRadius: 8,
-    padding: 16,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  rowLabel: {
+    // modal
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: colors.modalBackdrop,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    modalContent: {
+      width: "85%",
+      backgroundColor: colors.modalBackground,
+      borderRadius: 8,
+      padding: 16,
+    },
+    modalTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      marginBottom: 12,
+      color: colors.text,
+    },
+    rowLabel: {
       fontSize: 14,
       fontWeight: "600",
       marginBottom: 12,
+      color: colors.text,
     },
-  modalInput: {
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    fontSize: 14,
-    marginTop: 8,
-  },
-  modalButtonsRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginTop: 16,
-  },
-  modalButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginLeft: 8,
-  },
-  modalButtonPrimary: {
-    backgroundColor: "#007AFF",
-    borderRadius: 6,
-  },
-  modalButtonText: {
-    fontSize: 14,
-  },
+    modalInput: {
+      borderWidth: 1,
+      borderRadius: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 8,
+      fontSize: 14,
+      marginTop: 8,
+      borderColor: colors.inputBorder,
+      color: colors.text,
+      backgroundColor: colors.inputBackground,
+    },
+    modalButtonsRow: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      marginTop: 16,
+    },
+    modalButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      marginLeft: 8,
+    },
+    modalButtonPrimary: {
+      backgroundColor: colors.primary,
+      borderRadius: 6,
+    },
+    modalButtonText: {
+      fontSize: 14,
+      color: colors.text,
+    },
 
-  modalStatusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  modalStatusLabel: {
-    fontSize: 13,
-    color: "#444",
-    marginRight: 8,
-  },
-  modalStatusText: {
-    fontSize: 13,
-    color: "#444",
-    marginLeft: 6,
-  },
+    modalStatusRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    modalStatusLabel: {
+      fontSize: 13,
+      color: colors.mutedText,
+      marginRight: 8,
+    },
+    modalStatusText: {
+      fontSize: 13,
+      color: colors.mutedText,
+      marginLeft: 6,
+    },
 
-  modalRow: {
+    modalRow: {
       flexDirection: "row",
       alignItems: "center",
       paddingVertical: 8,
@@ -744,44 +864,39 @@ const styles = StyleSheet.create({
       flex: 1,
       paddingRight: 8,
     },
-    modalButtonsRow: {
-      marginTop: 16,
-      flexDirection: "row",
-      justifyContent: "flex-end",
+
+    langRadioOuter: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.mutedText,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    langRadioInner: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: colors.primary,
     },
 
-  langRadioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#555",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  langRadioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#007AFF",
-  },
-
-  dotOnline: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#2ecc71",
-  },
-  dotOffline: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#e74c3c",
-  },
-  dotUnknown: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#bdc3c7",
-  },
-});
+    dotOnline: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.success,
+    },
+    dotOffline: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.danger,
+    },
+    dotUnknown: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.border,
+    },
+  });

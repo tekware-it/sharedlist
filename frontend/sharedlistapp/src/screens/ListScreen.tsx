@@ -51,6 +51,7 @@ import {
 } from "../storage/itemsStore";
 import Clipboard from "@react-native-clipboard/clipboard";
 import { syncEvents } from "../events/syncEvents";
+import { useTheme, type ThemeColors } from "../theme";
 
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -78,6 +79,7 @@ const fallbackFlagsDefinition: FlagsDefinition = {
 
 export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const { t } = useTranslation();
+  const { colors } = useTheme();
 
   const [meta, setMeta] = useState<ListMeta | null>(null);
   const [items, setItems] = useState<ItemView[]>([]);
@@ -88,6 +90,8 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
 
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
+
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
 
   const { orderedItems, firstCrossedIndex } = useMemo(() => {
@@ -965,8 +969,8 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator />
-        <Text>Carico la lista...</Text>
+        <ActivityIndicator color={colors.primary} />
+        <Text style={{ color: colors.text }}>Carico la lista...</Text>
       </View>
     );
   }
@@ -1119,6 +1123,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
             value={newLabel}
             onChangeText={setNewLabel}
             placeholder="Aggiungi un elemento..."
+            placeholderTextColor={colors.mutedText}
             returnKeyType="done"
             onSubmitEditing={handleAddItem}
           />
@@ -1140,172 +1145,187 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  container: { flex: 1, paddingTop: 48, paddingHorizontal: 16 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 22, fontWeight: "700" },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  error: { color: "red" },
-  emptyText: { fontSize: 14, color: "#666" },
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.background },
+    container: {
+      flex: 1,
+      paddingTop: 48,
+      paddingHorizontal: 16,
+      backgroundColor: colors.background,
+    },
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.background,
+    },
+    title: { fontSize: 20, fontWeight: "700", marginRight: 8, color: colors.text },
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 16,
+    },
+    error: { color: colors.danger },
+    emptyText: { fontSize: 14, color: colors.mutedText },
 
-  headerTitleArea: {
+    headerTitleArea: {
       flexDirection: "row",
       alignItems: "center",
     },
-    title: {
-      fontSize: 20,
-      fontWeight: "700",
-      marginRight: 8,
-    },
     headerHealthDotButton: {
-        marginRight: 8,
-        paddingHorizontal: 4,
-        paddingVertical: 4,
-      },
+      marginRight: 8,
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+    },
     healthDotOnline: {
       width: 12,
       height: 12,
       borderRadius: 6,
-      backgroundColor: "#2ecc71",
+      backgroundColor: colors.success,
     },
     healthDotOffline: {
       width: 12,
       height: 12,
       borderRadius: 6,
-      backgroundColor: "#e74c3c",
+      backgroundColor: colors.danger,
     },
     healthDotUnknown: {
       width: 12,
       height: 12,
       borderRadius: 6,
-      backgroundColor: "#bdc3c7",
+      backgroundColor: colors.border,
     },
 
+    itemRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 10,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    itemContent: {
+      flex: 1,
+    },
+    itemLabel: {
+      fontSize: 16,
+      color: colors.text,
+    },
+    itemLabelChecked: {
+      textDecorationLine: "line-through",
+      color: colors.mutedText,
+    },
+    itemLabelCrossed: {
+      color: colors.mutedText,
+    },
+    itemLabelHighlighted: {
+      fontWeight: "700",
+    },
 
-  itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  itemContent: {
-    flex: 1,
-  },
-  itemLabel: {
-    fontSize: 16,
-  },
-  itemLabelChecked: {
-    textDecorationLine: "line-through",
-  },
-  itemLabelCrossed: {
-    color: "#999",
-  },
-  itemLabelHighlighted: {
-    fontWeight: "700",
-  },
+    itemRightRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
 
-  itemRightRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+    flagsRow: {
+      flexDirection: "row",
+      marginTop: 4,
+    },
+    flagChip: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginRight: 6,
+    },
+    flagChipActive: {
+      backgroundColor: `${colors.primary}22`,
+      borderColor: colors.primary,
+    },
+    flagChipText: {
+      fontSize: 12,
+      color: colors.text,
+    },
 
-  flagsRow: {
-    flexDirection: "row",
-    marginTop: 4,
-  },
-  flagChip: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    marginRight: 6,
-  },
-  flagChipActive: {
-    backgroundColor: "#007AFF22",
-    borderColor: "#007AFF",
-  },
-  flagChipText: {
-    fontSize: 12,
-  },
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    headerIconButton: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    headerIconText: {
+      fontSize: 20,
+      color: colors.text,
+    },
 
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerIconButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  headerIconText: {
-    fontSize: 20,
-  },
+    pendingItemContainer: {
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+    },
+    pendingItemIcon: {
+      fontSize: 16,
+      color: colors.warning,
+    },
 
-  pendingItemContainer: {
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-  },
-  pendingItemIcon: {
-    fontSize: 16,
-    color: "#f39c12",
-  },
+    itemTrashButton: {
+      paddingHorizontal: 6,
+      paddingVertical: 4,
+    },
+    itemTrashText: {
+      fontSize: 18,
+      color: colors.text,
+    },
 
-  itemTrashButton: {
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-  },
-  itemTrashText: {
-    fontSize: 18,
-  },
+    newItemBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 8,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      marginTop: 8,
+      paddingBottom: Platform.OS === "ios" ? 8 : 8,
+    },
 
-  newItemBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    marginTop: 8,
-    paddingBottom: Platform.OS === "ios" ? 8 : 8,
-  },
+    crossedSeparator: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 8,
+      marginBottom: 4,
+    },
+    crossedSeparatorLine: {
+      flex: 1,
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.border,
+    },
+    crossedSeparatorLabel: {
+      marginHorizontal: 8,
+      fontSize: 12,
+      color: colors.mutedText,
+    },
 
-  crossedSeparator: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  crossedSeparatorLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "#ccc",
-  },
-  crossedSeparatorLabel: {
-    marginHorizontal: 8,
-    fontSize: 12,
-    color: "#666",
-  },
-
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    marginRight: 8,
-  },
-  addButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
-    backgroundColor: "#007AFF",
-  },
-  addButtonText: {
-    color: "white",
-    fontWeight: "600",
-  },
-});
+    input: {
+      flex: 1,
+      borderWidth: 1,
+      borderRadius: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 8,
+      marginRight: 8,
+      borderColor: colors.inputBorder,
+      backgroundColor: colors.inputBackground,
+      color: colors.text,
+    },
+    addButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 6,
+      backgroundColor: colors.primary,
+    },
+    addButtonText: {
+      color: "white",
+      fontWeight: "600",
+    },
+  });

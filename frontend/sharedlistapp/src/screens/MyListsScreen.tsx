@@ -1,6 +1,6 @@
 // src/screens/MyListsScreen.tsx
 import { subscribeToListPush, unsubscribeFromListPush } from "../push/subscribe";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   View,
@@ -44,6 +44,7 @@ import {
 } from "../api/client";
 import { getClientId } from "../storage/clientId";
 import { syncEvents } from "../events/syncEvents";
+import { useTheme, type ThemeColors } from "../theme";
 import { loadSettings } from "../storage/settingsStore";
 
 import { enqueueCreateList } from "../storage/syncQueue";
@@ -258,6 +259,7 @@ export const MyListsScreen: React.FC<Props> = ({
   onOpenSettings,
 }) => {
   const { t } = useTranslation();
+  const { colors } = useTheme();
 
   const [lists, setLists] = useState<ListWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -266,6 +268,8 @@ export const MyListsScreen: React.FC<Props> = ({
   );
   const [importDialogVisible, setImportDialogVisible] = useState(false);
   const [importLinkText, setImportLinkText] = useState("");
+
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   function computeHasRemoteChanges(l: StoredList): boolean {
     if (l.removedFromServer) return false;
@@ -767,8 +771,8 @@ export const MyListsScreen: React.FC<Props> = ({
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator />
-        <Text>{t("myLists.loading")}</Text>
+        <ActivityIndicator color={colors.primary} />
+        <Text style={{ color: colors.text }}>{t("myLists.loading")}</Text>
       </View>
     );
   }
@@ -884,6 +888,7 @@ export const MyListsScreen: React.FC<Props> = ({
               value={importLinkText}
               onChangeText={setImportLinkText}
               placeholder={t("myLists.import_dialog_placeholder")}
+              placeholderTextColor={colors.mutedText}
               multiline
             />
 
@@ -919,157 +924,177 @@ export const MyListsScreen: React.FC<Props> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 48, paddingHorizontal: 16 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      paddingTop: 48,
+      paddingHorizontal: 16,
+      backgroundColor: colors.background,
+    },
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.background,
+    },
 
-   listNameRemoved: {
-     color: "#999",
-     textDecorationLine: "line-through",
-   },
+    listNameRemoved: {
+      color: colors.mutedText,
+      textDecorationLine: "line-through",
+    },
 
-   listRemovedLabel: {
-     fontSize: 11,
-     color: "#e74c3c",
-   },
+    listRemovedLabel: {
+      fontSize: 11,
+      color: colors.danger,
+    },
 
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  title: { fontSize: 24, fontWeight: "700" },
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 16,
+    },
+    title: { fontSize: 24, fontWeight: "700", color: colors.text },
 
-  healthDotOnline: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#2ecc71",
-  },
-  healthDotOffline: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#e74c3c",
-  },
-  healthDotUnknown: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#bdc3c7",
-  },
+    healthDotOnline: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: colors.success,
+    },
+    healthDotOffline: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: colors.danger,
+    },
+    healthDotUnknown: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: colors.border,
+    },
 
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+    headerRight: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
 
-  headerAddButton: {
-    marginLeft: 8,
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-  },
+    headerAddButton: {
+      marginLeft: 8,
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+    },
 
-  headerAddIcon: {
-    fontSize: 22,
-  },
+    headerAddIcon: {
+      fontSize: 22,
+      color: colors.text,
+    },
 
-  emptyText: { fontSize: 14, color: "#666", marginBottom: 16 },
+    emptyText: { fontSize: 14, color: colors.mutedText, marginBottom: 16 },
 
-  listRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  listRowText: { flex: 1 },
-  listName: { fontSize: 16, fontWeight: "500" },
-  listId: { fontSize: 10, color: "#999" },
+    listRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    listRowText: { flex: 1 },
+    listName: { fontSize: 16, fontWeight: "500", color: colors.text },
+    listId: { fontSize: 10, color: colors.mutedText },
 
-  badge: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "red",
-    marginRight: 8,
-  },
+    badge: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.danger,
+      marginRight: 8,
+    },
 
-  pendingContainer: {
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-    marginRight: 4,
-  },
-  pendingIcon: {
-    fontSize: 16,
-    color: "#f39c12",
-  },
+    pendingContainer: {
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+      marginRight: 4,
+    },
+    pendingIcon: {
+      fontSize: 16,
+      color: colors.warning,
+    },
 
-  trashButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  trashText: {
-    fontSize: 18,
-  },
+    trashButton: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    trashText: {
+      fontSize: 18,
+      color: colors.text,
+    },
 
-  settingsButton: {
-    marginLeft: 8,
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-  },
-  settingsIcon: {
-    fontSize: 20,
-  },
+    settingsButton: {
+      marginLeft: 8,
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+    },
+    settingsIcon: {
+      fontSize: 20,
+      color: colors.text,
+    },
 
-  bottom: { paddingVertical: 16 },
+    bottom: { paddingVertical: 16 },
 
-  importModalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  importModalContent: {
-    width: "90%",
-    backgroundColor: "white",
-    borderRadius: 8,
-    padding: 16,
-  },
-  importModalTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  importModalHelper: {
-    fontSize: 12,
-    color: "#666",
-    marginBottom: 8,
-  },
-  importModalInput: {
-    minHeight: 80,
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    fontSize: 14,
-    textAlignVertical: "top",
-  },
-  importModalButtonsRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginTop: 16,
-  },
-  importModalButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginLeft: 8,
-  },
-  importModalButtonPrimary: {
-    backgroundColor: "#007AFF",
-    borderRadius: 6,
-  },
-  importModalButtonText: {
-    fontSize: 14,
-  },
-});
+    importModalBackdrop: {
+      flex: 1,
+      backgroundColor: colors.modalBackdrop,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    importModalContent: {
+      width: "90%",
+      backgroundColor: colors.modalBackground,
+      borderRadius: 8,
+      padding: 16,
+    },
+    importModalTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      marginBottom: 8,
+      color: colors.text,
+    },
+    importModalHelper: {
+      fontSize: 12,
+      color: colors.mutedText,
+      marginBottom: 8,
+    },
+    importModalInput: {
+      minHeight: 80,
+      borderWidth: 1,
+      borderRadius: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 8,
+      fontSize: 14,
+      textAlignVertical: "top",
+      borderColor: colors.inputBorder,
+      backgroundColor: colors.inputBackground,
+      color: colors.text,
+    },
+    importModalButtonsRow: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      marginTop: 16,
+    },
+    importModalButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      marginLeft: 8,
+    },
+    importModalButtonPrimary: {
+      backgroundColor: colors.primary,
+      borderRadius: 6,
+    },
+    importModalButtonText: {
+      fontSize: 14,
+      color: colors.text,
+    },
+  });
