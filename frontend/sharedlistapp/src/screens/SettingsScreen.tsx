@@ -285,7 +285,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
   }
 
   function handleDonate() {
-    const url = "https://buymeacoffee.com/tuo-nome"; // TODO: metti il tuo link
+    const url = "https://buymeacoffee.com/sharedlist";
     Linking.openURL(url).catch((e) => {
       console.warn(e);
       Alert.alert(t("common.error_title"), t("settings.open_browser_failed"));
@@ -308,6 +308,26 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
         return t("settings.language_option_pt_br");
       case "zh-Hans":
         return t("settings.language_option_zh_hans");
+      case "hi":
+        return t("settings.language_option_hi");
+      case "ar":
+        return t("settings.language_option_ar");
+      case "ru":
+        return t("settings.language_option_ru");
+      case "de":
+        return t("settings.language_option_de");
+      case "nl":
+        return t("settings.language_option_nl");
+      case "sv":
+        return t("settings.language_option_sv");
+      case "da":
+        return t("settings.language_option_da");
+      case "fi":
+        return t("settings.language_option_fi");
+      case "pl":
+        return t("settings.language_option_pl");
+      case "el-GR":
+        return t("settings.language_option_el_gr");
       case "system":
       default:
         return t("settings.language_option_system");
@@ -552,6 +572,16 @@ function renderLanguageOption(
             {renderLanguageOption("pt", t("settings.language_option_pt"))}
             {renderLanguageOption("pt-BR", t("settings.language_option_pt_br"))}
             {renderLanguageOption("zh-Hans", t("settings.language_option_zh_hans"))}
+            {renderLanguageOption("hi", t("settings.language_option_hi"))}
+            {renderLanguageOption("ar", t("settings.language_option_ar"))}
+            {renderLanguageOption("ru", t("settings.language_option_ru"))}
+            {renderLanguageOption("de", t("settings.language_option_de"))}
+            {renderLanguageOption("nl", t("settings.language_option_nl"))}
+            {renderLanguageOption("sv", t("settings.language_option_sv"))}
+            {renderLanguageOption("da", t("settings.language_option_da"))}
+            {renderLanguageOption("fi", t("settings.language_option_fi"))}
+            {renderLanguageOption("pl", t("settings.language_option_pl"))}
+            {renderLanguageOption("el-GR", t("settings.language_option_el_gr"))}
 
             <View style={styles.modalButtonsRow}>
               <TouchableOpacity

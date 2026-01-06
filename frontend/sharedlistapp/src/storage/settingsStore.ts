@@ -9,7 +9,17 @@ export type LanguageOption =
   | "es"
   | "pt"
   | "pt-BR"
-  | "zh-Hans";
+  | "zh-Hans"
+  | "hi"
+  | "ar"
+  | "ru"
+  | "de"
+  | "nl"
+  | "sv"
+  | "da"
+  | "fi"
+  | "pl"
+  | "el-GR";
 export type ThemeMode = "system" | "light" | "dark";
 
 export type AppSettings = {

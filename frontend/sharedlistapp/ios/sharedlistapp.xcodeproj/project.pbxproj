@@ -19,6 +19,16 @@
 		A1B2C3D4E5F60718293A4B62 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B59 /* LaunchScreen.strings */; };
 		A1B2C3D4E5F60718293A4B63 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B58 /* LaunchScreen.strings */; };
 		A1B2C3D4E5F60718293A4B64 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B57 /* LaunchScreen.strings */; };
+		A1B2C3D4E5F60718293A4B79 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B70 /* LaunchScreen.strings */; };
+		A1B2C3D4E5F60718293A4B7A /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B71 /* LaunchScreen.strings */; };
+		A1B2C3D4E5F60718293A4B7B /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B72 /* LaunchScreen.strings */; };
+		A1B2C3D4E5F60718293A4B7C /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B73 /* LaunchScreen.strings */; };
+		A1B2C3D4E5F60718293A4B7D /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B74 /* LaunchScreen.strings */; };
+		A1B2C3D4E5F60718293A4B7E /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B75 /* LaunchScreen.strings */; };
+		A1B2C3D4E5F60718293A4B7F /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B76 /* LaunchScreen.strings */; };
+		A1B2C3D4E5F60718293A4B80 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B77 /* LaunchScreen.strings */; };
+		A1B2C3D4E5F60718293A4B81 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B78 /* LaunchScreen.strings */; };
+		A1B2C3D4E5F60718293A4B82 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B69 /* LaunchScreen.strings */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
@@ -35,6 +45,16 @@
 		A1B2C3D4E5F60718293A4B59 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/pt.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5A /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/fr.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B57 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/zh-Hans.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B70 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/hi.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B71 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/ar.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B72 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/ru.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B73 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/de.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B74 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/nl.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B75 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/sv.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B76 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/da.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B77 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/fi.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B78 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/pl.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B69 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/el-GR.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5B /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/es.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5C /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/en.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5D /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/it.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
@@ -63,6 +83,16 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				A1B2C3D4E5F60718293A4B57 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B70 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B71 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B72 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B73 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B74 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B75 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B76 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B77 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B78 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B69 /* LaunchScreen.strings */,
 				A1B2C3D4E5F60718293A4B58 /* LaunchScreen.strings */,
 				A1B2C3D4E5F60718293A4B59 /* LaunchScreen.strings */,
 				A1B2C3D4E5F60718293A4B5A /* LaunchScreen.strings */,
@@ -173,6 +203,16 @@
 				pt,
 				"pt-BR",
 				"zh-Hans",
+				hi,
+				ar,
+				ru,
+				de,
+				nl,
+				sv,
+				da,
+				fi,
+				pl,
+				"el-GR",
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
@@ -197,6 +237,16 @@
 				A1B2C3D4E5F60718293A4B62 /* LaunchScreen.strings in Resources */,
 				A1B2C3D4E5F60718293A4B63 /* LaunchScreen.strings in Resources */,
 				A1B2C3D4E5F60718293A4B64 /* LaunchScreen.strings in Resources */,
+				A1B2C3D4E5F60718293A4B79 /* LaunchScreen.strings in Resources */,
+				A1B2C3D4E5F60718293A4B7A /* LaunchScreen.strings in Resources */,
+				A1B2C3D4E5F60718293A4B7B /* LaunchScreen.strings in Resources */,
+				A1B2C3D4E5F60718293A4B7C /* LaunchScreen.strings in Resources */,
+				A1B2C3D4E5F60718293A4B7D /* LaunchScreen.strings in Resources */,
+				A1B2C3D4E5F60718293A4B7E /* LaunchScreen.strings in Resources */,
+				A1B2C3D4E5F60718293A4B7F /* LaunchScreen.strings in Resources */,
+				A1B2C3D4E5F60718293A4B80 /* LaunchScreen.strings in Resources */,
+				A1B2C3D4E5F60718293A4B81 /* LaunchScreen.strings in Resources */,
+				A1B2C3D4E5F60718293A4B82 /* LaunchScreen.strings in Resources */,
 				0F280A912EF9A82E002BC0A6 /* GoogleService-Info.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				77F8951E9C93ACBB6721ED63 /* PrivacyInfo.xcprivacy in Resources */,

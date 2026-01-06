@@ -10,6 +10,16 @@ import es from "./locales/es.json";
 import pt from "./locales/pt.json";
 import ptBR from "./locales/pt-BR.json";
 import zhHans from "./locales/zh-Hans.json";
+import hi from "./locales/hi.json";
+import ar from "./locales/ar.json";
+import ru from "./locales/ru.json";
+import de from "./locales/de.json";
+import nl from "./locales/nl.json";
+import sv from "./locales/sv.json";
+import da from "./locales/da.json";
+import fi from "./locales/fi.json";
+import pl from "./locales/pl.json";
+import elGR from "./locales/el-GR.json";
 import { loadSettings } from "../storage/settingsStore";
 
 const resources = {
@@ -20,6 +30,16 @@ const resources = {
   pt: { translation: pt },
   "pt-BR": { translation: ptBR },
   "zh-Hans": { translation: zhHans },
+  hi: { translation: hi },
+  ar: { translation: ar },
+  ru: { translation: ru },
+  de: { translation: de },
+  nl: { translation: nl },
+  sv: { translation: sv },
+  da: { translation: da },
+  fi: { translation: fi },
+  pl: { translation: pl },
+  "el-GR": { translation: elGR },
 } as const;
 
 const RTL_LANGS = new Set(["ar", "he", "iw", "fa", "ur", "yi"]);
@@ -52,7 +72,17 @@ type SupportedLanguage =
   | "es"
   | "pt"
   | "pt-BR"
-  | "zh-Hans";
+  | "zh-Hans"
+  | "hi"
+  | "ar"
+  | "ru"
+  | "de"
+  | "nl"
+  | "sv"
+  | "da"
+  | "fi"
+  | "pl"
+  | "el-GR";
 
 function normalizeLanguageTag(
   languageTag: string | undefined | null,
@@ -65,6 +95,16 @@ function normalizeLanguageTag(
   if (tag === "pt-br" || (lang === "pt" && country === "BR")) return "pt-BR";
   if (tag === "zh-hans" || tag === "zh-cn" || country === "CN") return "zh-Hans";
   if (lang === "zh") return "zh-Hans";
+  if (lang === "hi") return "hi";
+  if (lang === "ar") return "ar";
+  if (lang === "ru") return "ru";
+  if (lang === "de") return "de";
+  if (lang === "nl") return "nl";
+  if (lang === "sv") return "sv";
+  if (lang === "da") return "da";
+  if (lang === "fi") return "fi";
+  if (lang === "pl") return "pl";
+  if (tag === "el-gr" || lang === "el") return "el-GR";
   if (lang === "pt") return "pt";
   if (lang === "en") return "en";
   if (lang === "fr") return "fr";
@@ -93,7 +133,17 @@ export function applyStoredLanguageAsync() {
         s.language === "es" ||
         s.language === "pt" ||
         s.language === "pt-BR" ||
-        s.language === "zh-Hans"
+        s.language === "zh-Hans" ||
+        s.language === "hi" ||
+        s.language === "ar" ||
+        s.language === "ru" ||
+        s.language === "de" ||
+        s.language === "nl" ||
+        s.language === "sv" ||
+        s.language === "da" ||
+        s.language === "fi" ||
+        s.language === "pl" ||
+        s.language === "el-GR"
       ) {
         i18n.changeLanguage(s.language);
       } else {
