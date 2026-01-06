@@ -306,6 +306,8 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
         return t("settings.language_option_pt");
       case "pt-BR":
         return t("settings.language_option_pt_br");
+      case "zh-Hans":
+        return t("settings.language_option_zh_hans");
       case "system":
       default:
         return t("settings.language_option_system");
@@ -549,6 +551,7 @@ function renderLanguageOption(
             {renderLanguageOption("es", t("settings.language_option_es"))}
             {renderLanguageOption("pt", t("settings.language_option_pt"))}
             {renderLanguageOption("pt-BR", t("settings.language_option_pt_br"))}
+            {renderLanguageOption("zh-Hans", t("settings.language_option_zh_hans"))}
 
             <View style={styles.modalButtonsRow}>
               <TouchableOpacity

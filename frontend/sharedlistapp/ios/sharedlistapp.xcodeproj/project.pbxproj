@@ -18,6 +18,7 @@
 		A1B2C3D4E5F60718293A4B61 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5B /* LaunchScreen.strings */; };
 		A1B2C3D4E5F60718293A4B62 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B59 /* LaunchScreen.strings */; };
 		A1B2C3D4E5F60718293A4B63 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B58 /* LaunchScreen.strings */; };
+		A1B2C3D4E5F60718293A4B64 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B57 /* LaunchScreen.strings */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
@@ -33,6 +34,7 @@
 		A1B2C3D4E5F60718293A4B58 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/pt-BR.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B59 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/pt.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5A /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/fr.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B57 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/zh-Hans.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5B /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/es.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5C /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/en.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5D /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/it.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
@@ -60,6 +62,7 @@
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
+				A1B2C3D4E5F60718293A4B57 /* LaunchScreen.strings */,
 				A1B2C3D4E5F60718293A4B58 /* LaunchScreen.strings */,
 				A1B2C3D4E5F60718293A4B59 /* LaunchScreen.strings */,
 				A1B2C3D4E5F60718293A4B5A /* LaunchScreen.strings */,
@@ -169,6 +172,7 @@
 				es,
 				pt,
 				"pt-BR",
+				"zh-Hans",
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
@@ -192,6 +196,7 @@
 				A1B2C3D4E5F60718293A4B61 /* LaunchScreen.strings in Resources */,
 				A1B2C3D4E5F60718293A4B62 /* LaunchScreen.strings in Resources */,
 				A1B2C3D4E5F60718293A4B63 /* LaunchScreen.strings in Resources */,
+				A1B2C3D4E5F60718293A4B64 /* LaunchScreen.strings in Resources */,
 				0F280A912EF9A82E002BC0A6 /* GoogleService-Info.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				77F8951E9C93ACBB6721ED63 /* PrivacyInfo.xcprivacy in Resources */,

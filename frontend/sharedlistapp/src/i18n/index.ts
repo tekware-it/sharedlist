@@ -9,6 +9,7 @@ import fr from "./locales/fr.json";
 import es from "./locales/es.json";
 import pt from "./locales/pt.json";
 import ptBR from "./locales/pt-BR.json";
+import zhHans from "./locales/zh-Hans.json";
 import { loadSettings } from "../storage/settingsStore";
 
 const resources = {
@@ -18,6 +19,7 @@ const resources = {
   es: { translation: es },
   pt: { translation: pt },
   "pt-BR": { translation: ptBR },
+  "zh-Hans": { translation: zhHans },
 } as const;
 
 const RTL_LANGS = new Set(["ar", "he", "iw", "fa", "ur", "yi"]);
@@ -43,7 +45,14 @@ export function applyRtlForLanguage(lang: string) {
   }
 }
 
-type SupportedLanguage = "it" | "en" | "fr" | "es" | "pt" | "pt-BR";
+type SupportedLanguage =
+  | "it"
+  | "en"
+  | "fr"
+  | "es"
+  | "pt"
+  | "pt-BR"
+  | "zh-Hans";
 
 function normalizeLanguageTag(
   languageTag: string | undefined | null,
@@ -54,6 +63,8 @@ function normalizeLanguageTag(
   const lang = (languageCode ?? "").toLowerCase();
   const country = (countryCode ?? "").toUpperCase();
   if (tag === "pt-br" || (lang === "pt" && country === "BR")) return "pt-BR";
+  if (tag === "zh-hans" || tag === "zh-cn" || country === "CN") return "zh-Hans";
+  if (lang === "zh") return "zh-Hans";
   if (lang === "pt") return "pt";
   if (lang === "en") return "en";
   if (lang === "fr") return "fr";
@@ -81,7 +92,8 @@ export function applyStoredLanguageAsync() {
         s.language === "fr" ||
         s.language === "es" ||
         s.language === "pt" ||
-        s.language === "pt-BR"
+        s.language === "pt-BR" ||
+        s.language === "zh-Hans"
       ) {
         i18n.changeLanguage(s.language);
       } else {

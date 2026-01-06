@@ -1,7 +1,15 @@
 // src/storage/settingsStore.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export type LanguageOption = "system" | "it" | "en" | "fr" | "es" | "pt" | "pt-BR";
+export type LanguageOption =
+  | "system"
+  | "it"
+  | "en"
+  | "fr"
+  | "es"
+  | "pt"
+  | "pt-BR"
+  | "zh-Hans";
 export type ThemeMode = "system" | "light" | "dark";
 
 export type AppSettings = {
