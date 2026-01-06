@@ -37,6 +37,7 @@ import {
   unsubscribeFromAllListsPush,
   subscribeToAllStoredListsPush,
 } from "../push/subscribe";
+import { needsRtlRestart } from "../i18n";
 
 
 type Props = {
@@ -297,6 +298,10 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
         return t("settings.language_option_it");
       case "en":
         return t("settings.language_option_en");
+      case "fr":
+        return t("settings.language_option_fr");
+      case "es":
+        return t("settings.language_option_es");
       case "system":
       default:
         return t("settings.language_option_system");
@@ -320,10 +325,16 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
     try {
       const next = await saveSettingsAndUpdate({ language: lang });
 
+      const systemCode = RNLocalize.getLocales()?.[0]?.languageCode?.toLowerCase();
+      const systemLang =
+        systemCode === "en" || systemCode === "fr" || systemCode === "es"
+          ? systemCode
+          : "it";
+      const nextLang = lang === "system" ? systemLang : lang;
+      const restartNeeded = needsRtlRestart(nextLang);
+
       if (lang === "system") {
-        const locales = RNLocalize.getLocales();
-        const code = locales?.[0]?.languageCode?.toLowerCase();
-        await i18n.changeLanguage(code === "en" ? "en" : "it");
+        await i18n.changeLanguage(systemLang);
       } else {
         await i18n.changeLanguage(lang);
       }
@@ -332,6 +343,12 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
 
       if (Platform.OS === "android") {
         ToastAndroid.show(i18n.t("common.language_updated"), ToastAndroid.SHORT);
+      }
+      if (restartNeeded) {
+        Alert.alert(
+          t("settings.restart_required_title"),
+          t("settings.restart_required_msg")
+        );
       }
     } catch (e) {
       console.error(e);
@@ -528,6 +545,8 @@ function renderLanguageOption(
             )}
             {renderLanguageOption("it", t("settings.language_option_it"))}
             {renderLanguageOption("en", t("settings.language_option_en"))}
+            {renderLanguageOption("fr", t("settings.language_option_fr"))}
+            {renderLanguageOption("es", t("settings.language_option_es"))}
 
             <View style={styles.modalButtonsRow}>
               <TouchableOpacity
