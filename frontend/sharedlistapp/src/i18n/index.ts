@@ -7,6 +7,8 @@ import it from "./locales/it.json";
 import en from "./locales/en.json";
 import fr from "./locales/fr.json";
 import es from "./locales/es.json";
+import pt from "./locales/pt.json";
+import ptBR from "./locales/pt-BR.json";
 import { loadSettings } from "../storage/settingsStore";
 
 const resources = {
@@ -14,6 +16,8 @@ const resources = {
   en: { translation: en },
   fr: { translation: fr },
   es: { translation: es },
+  pt: { translation: pt },
+  "pt-BR": { translation: ptBR },
 } as const;
 
 const RTL_LANGS = new Set(["ar", "he", "iw", "fa", "ur", "yi"]);
@@ -39,20 +43,32 @@ export function applyRtlForLanguage(lang: string) {
   }
 }
 
-type SupportedLanguage = "it" | "en" | "fr" | "es";
+type SupportedLanguage = "it" | "en" | "fr" | "es" | "pt" | "pt-BR";
 
-function normalizeLanguage(code: string | undefined | null): SupportedLanguage {
-  const normalized = (code ?? "").split("-")[0].toLowerCase();
-  if (normalized === "en") return "en";
-  if (normalized === "fr") return "fr";
-  if (normalized === "es") return "es";
+function normalizeLanguageTag(
+  languageTag: string | undefined | null,
+  languageCode: string | undefined | null,
+  countryCode: string | undefined | null
+): SupportedLanguage {
+  const tag = (languageTag ?? "").toLowerCase();
+  const lang = (languageCode ?? "").toLowerCase();
+  const country = (countryCode ?? "").toUpperCase();
+  if (tag === "pt-br" || (lang === "pt" && country === "BR")) return "pt-BR";
+  if (lang === "pt") return "pt";
+  if (lang === "en") return "en";
+  if (lang === "fr") return "fr";
+  if (lang === "es") return "es";
   return "it";
 }
 
-function detectSystemLanguage(): SupportedLanguage {
+export function detectSystemLanguage(): SupportedLanguage {
   const locales = RNLocalize.getLocales();
-  const code = locales?.[0]?.languageCode?.toLowerCase();
-  return normalizeLanguage(code);
+  const first = locales?.[0];
+  return normalizeLanguageTag(
+    first?.languageTag,
+    first?.languageCode,
+    first?.countryCode
+  );
 }
 
 export function applyStoredLanguageAsync() {
@@ -63,7 +79,9 @@ export function applyStoredLanguageAsync() {
         s.language === "it" ||
         s.language === "en" ||
         s.language === "fr" ||
-        s.language === "es"
+        s.language === "es" ||
+        s.language === "pt" ||
+        s.language === "pt-BR"
       ) {
         i18n.changeLanguage(s.language);
       } else {

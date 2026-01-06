@@ -16,6 +16,8 @@
 		A1B2C3D4E5F60718293A4B5F /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5D /* LaunchScreen.strings */; };
 		A1B2C3D4E5F60718293A4B60 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5A /* LaunchScreen.strings */; };
 		A1B2C3D4E5F60718293A4B61 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5B /* LaunchScreen.strings */; };
+		A1B2C3D4E5F60718293A4B62 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B59 /* LaunchScreen.strings */; };
+		A1B2C3D4E5F60718293A4B63 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B58 /* LaunchScreen.strings */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
@@ -28,6 +30,8 @@
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = sharedlistapp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = sharedlistapp/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = sharedlistapp/Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B58 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/pt-BR.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B59 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/pt.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5A /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/fr.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5B /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/es.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5C /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/en.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
@@ -56,6 +60,8 @@
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
+				A1B2C3D4E5F60718293A4B58 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B59 /* LaunchScreen.strings */,
 				A1B2C3D4E5F60718293A4B5A /* LaunchScreen.strings */,
 				A1B2C3D4E5F60718293A4B5B /* LaunchScreen.strings */,
 				A1B2C3D4E5F60718293A4B5C /* LaunchScreen.strings */,
@@ -161,6 +167,8 @@
 				it,
 				fr,
 				es,
+				pt,
+				"pt-BR",
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
@@ -182,6 +190,8 @@
 				A1B2C3D4E5F60718293A4B5F /* LaunchScreen.strings in Resources */,
 				A1B2C3D4E5F60718293A4B60 /* LaunchScreen.strings in Resources */,
 				A1B2C3D4E5F60718293A4B61 /* LaunchScreen.strings in Resources */,
+				A1B2C3D4E5F60718293A4B62 /* LaunchScreen.strings in Resources */,
+				A1B2C3D4E5F60718293A4B63 /* LaunchScreen.strings in Resources */,
 				0F280A912EF9A82E002BC0A6 /* GoogleService-Info.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				77F8951E9C93ACBB6721ED63 /* PrivacyInfo.xcprivacy in Resources */,

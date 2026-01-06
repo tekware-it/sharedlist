@@ -88,6 +88,8 @@
   "settings.language_option_en": "English",
   "settings.language_option_fr": "French",
   "settings.language_option_es": "Spanish",
+  "settings.language_option_pt": "Portuguese",
+  "settings.language_option_pt_br": "Portuguese (Brazil)",
   "settings.theme_dialog_title": "Theme",
   "settings.theme_option_system": "System",
   "settings.theme_option_light": "Light",

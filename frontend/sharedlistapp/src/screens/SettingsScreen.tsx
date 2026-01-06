@@ -37,7 +37,7 @@ import {
   unsubscribeFromAllListsPush,
   subscribeToAllStoredListsPush,
 } from "../push/subscribe";
-import { needsRtlRestart } from "../i18n";
+import { detectSystemLanguage, needsRtlRestart } from "../i18n";
 
 
 type Props = {
@@ -302,6 +302,10 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
         return t("settings.language_option_fr");
       case "es":
         return t("settings.language_option_es");
+      case "pt":
+        return t("settings.language_option_pt");
+      case "pt-BR":
+        return t("settings.language_option_pt_br");
       case "system":
       default:
         return t("settings.language_option_system");
@@ -325,11 +329,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
     try {
       const next = await saveSettingsAndUpdate({ language: lang });
 
-      const systemCode = RNLocalize.getLocales()?.[0]?.languageCode?.toLowerCase();
-      const systemLang =
-        systemCode === "en" || systemCode === "fr" || systemCode === "es"
-          ? systemCode
-          : "it";
+      const systemLang = detectSystemLanguage();
       const nextLang = lang === "system" ? systemLang : lang;
       const restartNeeded = needsRtlRestart(nextLang);
 
@@ -547,6 +547,8 @@ function renderLanguageOption(
             {renderLanguageOption("en", t("settings.language_option_en"))}
             {renderLanguageOption("fr", t("settings.language_option_fr"))}
             {renderLanguageOption("es", t("settings.language_option_es"))}
+            {renderLanguageOption("pt", t("settings.language_option_pt"))}
+            {renderLanguageOption("pt-BR", t("settings.language_option_pt_br"))}
 
             <View style={styles.modalButtonsRow}>
               <TouchableOpacity
