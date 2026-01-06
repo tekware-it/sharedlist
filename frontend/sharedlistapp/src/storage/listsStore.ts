@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { StoredList } from "./types";
+import i18n from "../i18n";
 
 const STORAGE_KEY = "sharedlist.lists";
 
@@ -41,7 +42,7 @@ export async function loadStoredLists(): Promise<StoredList[]> {
           return {
             listId: String(l.listId),
             listKey: String(l.listKey),
-            name: String(l.name ?? "Lista senza nome"),
+            name: String(l.name ?? i18n.t("list.unnamed")),
             lastSeenRev: lastSeen,
             lastRemoteRev: lastRemote,
             pendingCreate: !!l.pendingCreate,

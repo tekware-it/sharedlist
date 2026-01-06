@@ -55,11 +55,24 @@ import { triggerSyncNow } from "../sync/syncWorker";
 
 const PLACEHOLDER_NAME = "Lista importata"; // sentinel nello storage (non tradurre)
 
-const fallbackFlagsDefinition: FlagsDefinition = {
-  checked: { label: "Preso", description: "Articolo gia acquistato" },
-  crossed: { label: "Da verificare", description: "Controllare qualcosa" },
-  highlighted: { label: "Importante", description: "Da non dimenticare" },
-};
+function makeDefaultFlagsDefinition(
+  t: (k: string, o?: Record<string, any>) => string
+): FlagsDefinition {
+  return {
+    checked: {
+      label: t("flags.checked"),
+      description: t("flags.checked_desc"),
+    },
+    crossed: {
+      label: t("flags.crossed"),
+      description: t("flags.crossed_desc"),
+    },
+    highlighted: {
+      label: t("flags.highlighted"),
+      description: t("flags.highlighted_desc"),
+    },
+  };
+}
 
 type ListWithStatus = StoredList & { hasRemoteChanges: boolean };
 
@@ -75,7 +88,7 @@ async function reinsertListNow(
 ) {
   const metaToSend: ListMeta = {
     name: list.name ?? t("list.offline_title"),
-    flagsDefinition: fallbackFlagsDefinition,
+    flagsDefinition: makeDefaultFlagsDefinition(t),
   };
   const listKey = list.listKey as ListKey;
   const enc = encryptJson(listKey, metaToSend);
@@ -270,6 +283,13 @@ export const MyListsScreen: React.FC<Props> = ({
   );
   const [importDialogVisible, setImportDialogVisible] = useState(false);
   const [importLinkText, setImportLinkText] = useState("");
+
+  const getListDisplayName = (list: StoredList): string => {
+    if (list.name === PLACEHOLDER_NAME) {
+      return t("myLists.import_placeholder_name");
+    }
+    return list.name ?? t("list.offline_title");
+  };
 
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
@@ -608,14 +628,11 @@ export const MyListsScreen: React.FC<Props> = ({
     if (list.removedFromServer) {
       Alert.alert(
         t("myLists.removed_from_server"),
-        t(
-          "myLists.removed_from_server_msg",
-          "Questa lista non esiste piu sul server. Puoi aprirla solo in locale."
-        ),
+        t("myLists.removed_from_server_msg"),
         [
           { text: t("common.cancel"), style: "cancel" },
           {
-            text: "Reinserisci sul server",
+            text: t("myLists.reinsert_on_server"),
             onPress: async () => {
               try {
                 const online = await apiHealthz();
@@ -623,7 +640,7 @@ export const MyListsScreen: React.FC<Props> = ({
                   await reinsertListNow(list, t);
                   if (Platform.OS === "android") {
                     ToastAndroid.show(
-                      "Reinserimento completato",
+                      t("myLists.reinsert_done"),
                       ToastAndroid.SHORT
                     );
                   }
@@ -656,12 +673,9 @@ export const MyListsScreen: React.FC<Props> = ({
                   console.warn("triggerSyncNow failed", err)
                 );
 
-                if (Platform.OS === "android") {
-                  ToastAndroid.show(
-                    t(
-                      "list.reinsert_queued",
-                      "Reinserimento messo in coda di sincronizzazione"
-                    ),
+                  if (Platform.OS === "android") {
+                    ToastAndroid.show(
+                    t("myLists.reinsert_queued"),
                     ToastAndroid.SHORT
                   );
                 }
@@ -669,20 +683,20 @@ export const MyListsScreen: React.FC<Props> = ({
                 console.warn("Reinsert list failed", e);
                 if (Platform.OS === "android") {
                   ToastAndroid.show(
-                    t("myLists.remove_server_err", "Operazione non riuscita"),
+                    t("myLists.remove_server_err"),
                     ToastAndroid.SHORT
                   );
                 } else {
                   Alert.alert(
-                    t("common.error", "Errore"),
-                    t("myLists.remove_server_err", "Operazione non riuscita")
+                    t("common.error_title"),
+                    t("myLists.remove_server_err")
                   );
                 }
               }
             },
           },
           {
-            text: "Apri comunque",
+            text: t("myLists.open_anyway"),
             onPress: () => onSelectList(list.listId, list.listKey),
           },
         ]
@@ -742,7 +756,7 @@ export const MyListsScreen: React.FC<Props> = ({
   function confirmDelete(list: ListWithStatus) {
     Alert.alert(
       t("myLists.manage_list_title"),
-      t("myLists.manage_list_msg", { name: list.name }),
+      t("myLists.manage_list_msg", { name: getListDisplayName(list) }),
       [
         {
           text: t("myLists.remove_local"),
@@ -867,10 +881,12 @@ export const MyListsScreen: React.FC<Props> = ({
                       item.removedFromServer && styles.listNameRemoved,
                     ]}
                   >
-                    {item.name}
+                    {getListDisplayName(item)}
                   </Text>
                 {item.removedFromServer && (
-                    <Text style={styles.listRemovedLabel}>Rimossa dal server</Text>
+            <Text style={styles.listRemovedLabel}>
+              {t("myLists.removed_from_server")}
+            </Text>
                   )}
 
                 {!item.removedFromServer && (
@@ -916,7 +932,7 @@ export const MyListsScreen: React.FC<Props> = ({
         <View style={styles.importModalBackdrop}>
           <View style={styles.importModalContent}>
             <Text style={styles.importModalTitle}>
-              Incolla il link della lista
+              {t("myLists.import_dialog_title")}
             </Text>
             <Text style={styles.importModalHelper}>{t("myLists.import_dialog_helper")}</Text>
 
@@ -950,7 +966,7 @@ export const MyListsScreen: React.FC<Props> = ({
                     { color: "white" },
                   ]}
                 >
-                  Importa
+                  {t("myLists.import_dialog_import")}
                 </Text>
               </TouchableOpacity>
             </View>

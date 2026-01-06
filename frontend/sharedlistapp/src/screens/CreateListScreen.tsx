@@ -28,22 +28,33 @@ type Props = {
   onCancel: () => void;
 };
 
-const defaultFlagsDefinition: FlagsDefinition = {
-  checked: { label: "Preso", description: "Articolo già acquistato" },
-  crossed: { label: "Da verificare", description: "Controllare qualcosa" },
-  highlighted: { label: "Importante", description: "Da non dimenticare" },
+function makeDefaultFlagsDefinition(
+  t: (k: string, o?: Record<string, any>) => string
+): FlagsDefinition {
+  return {
+    checked: {
+      label: t("flags.checked"),
+      description: t("flags.checked_desc"),
+    },
+    crossed: {
+      label: t("flags.crossed"),
+      description: t("flags.crossed_desc"),
+    },
+    highlighted: {
+      label: t("flags.highlighted"),
+      description: t("flags.highlighted_desc"),
+    },
+  };
+}
 
-  //checked: { label: i18n.t("flags.checked"), description: "Articolo già acquistato" },
-  //crossed: { label: i18n.t("flags.crossed"), description: "Controllare qualcosa" },
-  //highlighted: { label: i18n.t("flags.highlighted"), description: "Da non dimenticare" },
-};
-
-function makeDefaultListName(): string {
+function makeDefaultListName(
+  t: (k: string, o?: Record<string, any>) => string
+): string {
   const d = new Date();
   const dd = String(d.getDate()).padStart(2, "0");
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const yyyy = d.getFullYear();
-  return `Lista ${dd}/${mm}/${yyyy}`;
+  return t("createList.default_name", { date: `${dd}/${mm}/${yyyy}` });
 }
 
 
@@ -51,7 +62,7 @@ export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
   const { t } = useTranslation();
   const { colors } = useTheme();
 
-  const [name, setName] = useState<string>(() => makeDefaultListName());
+  const [name, setName] = useState<string>(() => makeDefaultListName(t));
   const [creating, setCreating] = useState(false);
 
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -76,7 +87,7 @@ export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
 
     const meta: ListMeta = {
       name: trimmed,
-      flagsDefinition: defaultFlagsDefinition,
+      flagsDefinition: makeDefaultFlagsDefinition(t),
     };
 
     setCreating(true);
@@ -124,10 +135,7 @@ export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
           metaNonceB64: nonceB64,
         });
 
-        Alert.alert(
-          "Offline",
-          t("createList.offline_created")
-        );
+        Alert.alert(t("common.offline"), t("createList.offline_created"));
       }
       await subscribeToListPush(listId);
       onCreated(listId, listKey);
@@ -145,17 +153,17 @@ export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Crea una nuova lista</Text>
+      <Text style={styles.title}>{t("createList.header")}</Text>
       <Text style={styles.subtitle}>
-        Il contenuto sarà cifrato end-to-end. Neanche il server può leggerlo.
+        {t("createList.subtitle")}
       </Text>
 
-      <Text style={styles.label}>Nome della lista</Text>
+      <Text style={styles.label}>{t("createList.name_label")}</Text>
       <TextInput
         style={styles.input}
         value={name}
         onChangeText={setName}
-        placeholder="Es. Spesa di casa"
+        placeholder={t("createList.name_placeholder")}
         placeholderTextColor={colors.mutedText}
       />
 
@@ -163,7 +171,7 @@ export const CreateListScreen: React.FC<Props> = ({ onCreated, onCancel }) => {
         {creating ? (
           <View style={styles.loadingRow}>
             <ActivityIndicator color={colors.primary} />
-            <Text style={styles.loadingText}>Creazione in corso...</Text>
+            <Text style={styles.loadingText}>{t("createList.creating")}</Text>
           </View>
         ) : (
           <Button title={t("createList.title")} onPress={handleCreate} />

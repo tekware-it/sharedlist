@@ -38,16 +38,16 @@ export async function initNotifications() {
   }
 
   PushNotification.createChannel(
-        {
-          channelId: CHANNEL_ID,
-          channelName: "Aggiornamenti liste",
-          importance: 4, // HIGH
-          vibrate: true,
-        },
-        (created) => {
-          console.log("Notification channel ready:", created);
-        }
-      );
+    {
+      channelId: CHANNEL_ID,
+      channelName: i18n.t("notifications.channel_name"),
+      importance: 4, // HIGH
+      vibrate: true,
+    },
+    (created) => {
+      console.log("Notification channel ready:", created);
+    }
+  );
 
   // configure DEVE stare fuori dai component (doc ufficiale)
   PushNotification.configure({
@@ -79,12 +79,12 @@ export function notifyListsChanged(count: number) {
 
   const message =
     count === 1
-      ? "Una lista condivisa è stata aggiornata."
-      : `${count} liste condivise sono state aggiornate.`;
+      ? i18n.t("notifications.one_updated")
+      : i18n.t("notifications.many_updated", { count });
 
   PushNotification.localNotification({
     channelId: CHANNEL_ID,
-    title: "SharedList",
+    title: i18n.t("common.app_name"),
     message,
   });
 }

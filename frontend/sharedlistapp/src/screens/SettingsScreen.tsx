@@ -43,7 +43,6 @@ type Props = {
   onClose: () => void;
 };
 
-const APP_NAME = "SharedList";
 const APP_VERSION = "0.1.0"; // allinea a package.json se vuoi
 
 type ActiveDialog = "none" | "server" | "interval";
@@ -237,7 +236,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
       if (Platform.OS === "android") {
         ToastAndroid.show(t("settings.backend_url_saved"), ToastAndroid.SHORT);
       } else {
-        Alert.alert("OK", "URL backend salvato");
+        Alert.alert(t("common.ok"), t("settings.backend_url_saved"));
       }
     } catch (e) {
       console.error(e);
@@ -258,25 +257,29 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
       if (Platform.OS === "android") {
         ToastAndroid.show(t("settings.interval_saved"), ToastAndroid.SHORT);
       } else {
-        Alert.alert("OK", "Intervallo salvato");
+        Alert.alert(t("common.ok"), t("settings.interval_saved"));
       }
     } catch (e) {
       console.error(e);
-      Alert.alert(t("common.error_title"), "Non sono riuscito a salvare l'intervallo.");
+      Alert.alert(t("common.error_title"), t("settings.save_interval_failed"));
     }
   }
 
   function handleNotifications() {
     Alert.alert(
-      "Notifiche",
-      "Le notifiche non sono ancora implementate. Arriveranno in una versione futura."
+      t("settings.notifications_unavailable_title"),
+      t("settings.notifications_unavailable_msg")
     );
   }
 
   function handleInfo() {
     Alert.alert(
-      "Informazioni",
-      `${APP_NAME}\nVersione: ${APP_VERSION}\nBackend di default:\n${DEFAULT_BACKEND_URL}`
+      t("settings.info"),
+      t("settings.info_body", {
+        appName: t("common.app_name"),
+        version: APP_VERSION,
+        backendUrl: DEFAULT_BACKEND_URL,
+      })
     );
   }
 
@@ -284,7 +287,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
     const url = "https://buymeacoffee.com/tuo-nome"; // TODO: metti il tuo link
     Linking.openURL(url).catch((e) => {
       console.warn(e);
-      Alert.alert(t("common.error_title"), "Non riesco ad aprire il browser.");
+      Alert.alert(t("common.error_title"), t("settings.open_browser_failed"));
     });
   }
 
@@ -428,7 +431,7 @@ function renderLanguageOption(
     return (
       <View style={styles.center}>
         <ActivityIndicator />
-        <Text style={{ color: colors.text }}>Carico le impostazioni...</Text>
+        <Text style={{ color: colors.text }}>{t("settings.loading")}</Text>
       </View>
     );
   }
@@ -438,8 +441,8 @@ function renderLanguageOption(
       {/* Header: solo titolo, back = tasto hardware su Android */}
       {Platform.OS !== "ios" ? (
         <View style={styles.headerRow}>
-          <Text style={styles.headerTitle}>{t("settings.title")}</Text>
-        </View>
+        <Text style={styles.headerTitle}>{t("settings.title")}</Text>
+      </View>
       ) : null}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -500,7 +503,7 @@ function renderLanguageOption(
 
         <TouchableOpacity onPress={handleDonate}>
           <View style={styles.row}>
-            <Text style={styles.rowTitle}>Offrimi un caffè ☕</Text>
+            <Text style={styles.rowTitle}>{t("settings.donate_cta")}</Text>
           </View>
         </TouchableOpacity>
       </ScrollView>
@@ -580,10 +583,12 @@ function renderLanguageOption(
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>URL backend</Text>
+            <Text style={styles.modalTitle}>{t("settings.backend_url_title")}</Text>
 
             <View style={styles.modalStatusRow}>
-              <Text style={styles.modalStatusLabel}>Stato connessione</Text>
+              <Text style={styles.modalStatusLabel}>
+                {t("settings.connection_status_label")}
+              </Text>
               {backendTestStatus === "testing" ? (
                 <ActivityIndicator size="small" />
               ) : (
@@ -600,7 +605,7 @@ function renderLanguageOption(
                       ? t("common.online")
                       : backendTestStatus === "offline"
                       ? t("common.offline")
-                      : "Sconosciuto"}
+                      : t("common.unknown")}
                   </Text>
                 </>
               )}
@@ -624,14 +629,14 @@ function renderLanguageOption(
                 style={styles.modalButton}
                 onPress={() => setActiveDialog("none")}
               >
-                <Text style={styles.modalButtonText}>Annulla</Text>
+                <Text style={styles.modalButtonText}>{t("common.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonPrimary]}
                 onPress={handleSaveServer}
               >
                 <Text style={[styles.modalButtonText, { color: "white" }]}>
-                  Salva
+                  {t("common.save")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -668,14 +673,14 @@ function renderLanguageOption(
                 style={styles.modalButton}
                 onPress={() => setActiveDialog("none")}
               >
-                <Text style={styles.modalButtonText}>Annulla</Text>
+                <Text style={styles.modalButtonText}>{t("common.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonPrimary]}
                 onPress={handleSaveInterval}
               >
                 <Text style={[styles.modalButtonText, { color: "white" }]}>
-                  Salva
+                  {t("common.save")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -699,7 +704,7 @@ function renderLanguageOption(
                 <View style={styles.modalRowText}>
                   <Text style={styles.rowLabel}>{t("settings.enable_notifications")}</Text>
                   <Text style={styles.rowDescription}>
-                    Mostra notifiche quando una lista condivisa viene modificata.
+                    {t("settings.enable_notifications_help")}
                   </Text>
                 </View>
                 <Switch
@@ -714,8 +719,7 @@ function renderLanguageOption(
                 <View style={styles.modalRowText}>
                   <Text style={styles.rowLabel}>{t("settings.enable_bg_sync")}</Text>
                   <Text style={styles.rowDescription}>
-                    Sincronizza le liste anche a app chiusa. Se disattivi entrambe
-                    le opzioni, gli aggiornamenti avvengono solo quando apri l&apos;app.
+                    {t("settings.enable_bg_sync_help")}
                   </Text>
                 </View>
                 <Switch

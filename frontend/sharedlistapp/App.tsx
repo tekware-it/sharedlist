@@ -19,6 +19,7 @@ import {
   DarkTheme,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
 
 import { MyListsScreen } from "./src/screens/MyListsScreen";
 import { CreateListScreen } from "./src/screens/CreateListScreen";
@@ -46,6 +47,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 export default function App() {
+  const { t } = useTranslation();
   const [ready, setReady] = useState(false);
   const [themeMode, setThemeMode] = useState<ThemeMode>("system");
   const { scheme, colors } = useResolvedTheme(themeMode);
@@ -187,7 +189,7 @@ export default function App() {
           }}
         >
           <ActivityIndicator />
-          <Text style={{ color: colors.text }}>Avvio SharedList...</Text>
+          <Text style={{ color: colors.text }}>{t("common.app_loading")}</Text>
         </View>
       </SafeAreaView>
     );
@@ -258,22 +260,22 @@ export default function App() {
             <Stack.Screen
               name="MyLists"
               component={MyListsNavScreen}
-              options={{ title: "Le mie liste" }}
+              options={{ title: t("myLists.title") }}
             />
             <Stack.Screen
               name="CreateList"
               component={CreateListNavScreen}
-              options={{ title: "Nuova lista" }}
+              options={{ title: t("createList.header") }}
             />
             <Stack.Screen
               name="List"
               component={ListNavScreen as any}
-              options={{ title: "Lista" }}
+              options={{ title: t("list.title_fallback") }}
             />
             <Stack.Screen
               name="Settings"
               component={SettingsNavScreen}
-              options={{ title: "Impostazioni" }}
+              options={{ title: t("settings.title") }}
             />
           </Stack.Navigator>
         </NavigationContainer>

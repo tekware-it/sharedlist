@@ -72,11 +72,24 @@ type ItemView = {
   pendingOpId?: string;
 };
 
-const fallbackFlagsDefinition: FlagsDefinition = {
-  checked: { label: "Preso", description: "Articolo già acquistato" },
-  crossed: { label: "Da verificare", description: "Controllare qualcosa" },
-  highlighted: { label: "Importante", description: "Da non dimenticare" },
-};
+function makeDefaultFlagsDefinition(
+  t: (k: string, o?: Record<string, any>) => string
+): FlagsDefinition {
+  return {
+    checked: {
+      label: t("flags.checked"),
+      description: t("flags.checked_desc"),
+    },
+    crossed: {
+      label: t("flags.crossed"),
+      description: t("flags.crossed_desc"),
+    },
+    highlighted: {
+      label: t("flags.highlighted"),
+      description: t("flags.highlighted_desc"),
+    },
+  };
+}
 
 export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const { t } = useTranslation();
@@ -229,7 +242,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
         setRemovedFromServer(!!foundList?.removedFromServer);
         const offlineMeta: ListMeta = {
           name: foundList?.name ?? t("list.offline_title"),
-          flagsDefinition: fallbackFlagsDefinition,
+          flagsDefinition: makeDefaultFlagsDefinition(t),
         };
         setMeta(offlineMeta);
 
@@ -518,7 +531,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
 
     Alert.alert(
       t("list.shared_title"),
-      "Chiunque abbia questo link può vedere, modificare e cancellare la lista. Usalo solo con persone di cui ti fidi.",
+      t("list.shared_warning"),
       [
         { text: t("common.cancel"), style: "cancel" },
         {
@@ -527,9 +540,10 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           onPress: async () => {
             try {
               await Share.share({
-                message: `Lista condivisa: ${
-                  meta?.name ?? t("list.title_fallback")
-                }\n${deepLink}`,
+                message: t("list.share_message", {
+                  name: meta?.name ?? t("list.title_fallback"),
+                  link: deepLink,
+                }),
               });
             } catch (e) {
               console.log("Share cancelled/failed", e);
@@ -699,10 +713,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           },
         ]);
 
-        Alert.alert(
-          "Offline",
-          "Elemento creato solo sul dispositivo. Verrà sincronizzato automaticamente quando il server sarà raggiungibile."
-        );
+        Alert.alert(t("common.offline"), t("list.offline_item_created"));
       }
 
       setNewLabel("");
@@ -854,10 +865,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
         return updatedList;
       });
 
-      Alert.alert(
-        "Offline",
-        "Modifica salvata solo sul dispositivo. Verrà sincronizzata automaticamente quando il server sarà raggiungibile."
-      );
+      Alert.alert(t("common.offline"), t("list.offline_item_updated"));
     }
   }
 
@@ -868,7 +876,9 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     // conferma
     Alert.alert(
       t("list.remove_item_title"),
-      `Vuoi rimuovere "${target.plaintext?.label ?? "l'elemento"}" dalla lista?`,
+      t("list.remove_item_confirm", {
+        name: target.plaintext?.label ?? t("list.remove_item_fallback_label"),
+      }),
       [
         { text: t("common.cancel"), style: "cancel" },
         {
@@ -947,10 +957,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
                   itemId: target.item_id,
                 });
 
-                Alert.alert(
-                  "Offline",
-                  t("list.delete_saved_offline")
-                );
+        Alert.alert(t("common.offline"), t("list.delete_saved_offline"));
               }
             })();
           },
@@ -981,14 +988,14 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     lines.push("");
 
     if (orderedItems.length === 0) {
-      lines.push("(lista vuota)");
+      lines.push(t("list.empty_copy"));
     } else {
       orderedItems.forEach((item, index) => {
         const isCrossed = item.plaintext?.flags?.crossed;
 
         if (index === firstCrossedIndex && firstCrossedIndex >= 0) {
           lines.push("");
-          lines.push("--- Da verificare ---");
+          lines.push(t("list.crossed_separator_copy"));
         }
 
         lines.push(formatItemText(item));
@@ -1013,7 +1020,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     return (
       <View style={styles.center}>
         <ActivityIndicator color={colors.primary} />
-        <Text style={{ color: colors.text }}>Carico la lista...</Text>
+        <Text style={{ color: colors.text }}>{t("list.loading")}</Text>
       </View>
     );
   }
@@ -1071,7 +1078,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
         ) : null}
 
         {items.length === 0 ? (
-          <Text style={styles.emptyText}>Nessun elemento nella lista.</Text>
+          <Text style={styles.emptyText}>{t("list.empty")}</Text>
         ) : (
           <FlatList
             data={orderedItems}
@@ -1092,7 +1099,9 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
                   {index === firstCrossedIndex && firstCrossedIndex >= 0 && (
                     <View style={styles.crossedSeparator}>
                       <View style={styles.crossedSeparatorLine} />
-                      <Text style={styles.crossedSeparatorLabel}>Da verificare</Text>
+                      <Text style={styles.crossedSeparatorLabel}>
+                        {t("list.crossed_separator")}
+                      </Text>
                       <View style={styles.crossedSeparatorLine} />
                     </View>
                   )}
@@ -1169,7 +1178,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
             style={styles.input}
             value={newLabel}
             onChangeText={setNewLabel}
-            placeholder="Aggiungi un elemento..."
+            placeholder={t("list.add_item_placeholder")}
             placeholderTextColor={colors.mutedText}
             returnKeyType="done"
             onSubmitEditing={handleAddItem}
@@ -1183,7 +1192,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
             disabled={creatingItem || !newLabel.trim()}
           >
             <Text style={styles.addButtonText}>
-              {creatingItem ? "..." : "Aggiungi"}
+              {creatingItem ? t("common.loading_ellipsis") : t("list.add_item")}
             </Text>
           </TouchableOpacity>
         </View>
