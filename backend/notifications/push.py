@@ -11,10 +11,8 @@ async def notify_list_updated(
 ) -> None:
   # Android: FCM topic
   await send_list_update_fcm(list_id, latest_rev)
-"""
+
   # iOS: token per lista dal DB + APNs
   ios_tokens = await get_ios_tokens_for_list(conn, list_id)
   if ios_tokens:
     await send_list_update_apns(list_id, latest_rev, ios_tokens)
-"""
-

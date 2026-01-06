@@ -32,6 +32,11 @@ services:
       DISABLE_IP_RATE_LIMIT: "1"
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/sharedlist-ff538-firebase-adminsdk-fbsvc-ac84695e1a.json
       FIREBASE_PROJECT_ID: sharedlist-ff538
+      APNS_TEAM_ID: "LK3J9ST7RM"
+      APNS_KEY_ID: "M4887STY7V"
+      APNS_BUNDLE_ID: "it.tekware.sharedlistapp"
+      APNS_PRIVATE_KEY_PATH: /run/secrets/AuthKey_M4887STY7V.p8
+      APNS_USE_SANDBOX: "true"
     depends_on:
       - db
       - redis
@@ -65,4 +70,3 @@ volumes:
 
 networks:
   sharedlist_net:
-

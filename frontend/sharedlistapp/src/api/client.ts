@@ -67,6 +67,10 @@ async function apiFetch(path: string, options: ApiOptions = {}): Promise<any> {
   return res.status === 204 ? null : res.json();
 }
 
+export async function getBaseUrl(): Promise<string> {
+  return getBackendUrl();
+}
+
 export async function apiCreateList(params: {
   listId: string;
   meta_ciphertext_b64: string;

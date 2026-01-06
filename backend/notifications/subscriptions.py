@@ -9,7 +9,7 @@ async def get_ios_tokens_for_list(conn: AsyncConnection, list_id: str) -> List[s
             (list_id,),
         )
         rows = await cur.fetchall()
-    return [r[0] for r in rows]
+    return [r["device_token"] for r in rows]
 
 async def upsert_ios_subscription(
     conn: AsyncConnection,
@@ -42,4 +42,3 @@ async def delete_ios_subscription(
             """,
             (list_id, client_id, device_token),
         )
-

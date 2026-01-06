@@ -4,8 +4,8 @@ psycopg[binary]
 redis>=5.0.0
 pydantic
 pytest
-httpx
+httpx[http2]
 google-auth
 google-auth-httplib2
 google-api-python-client
-PyJWT
+PyJWT[crypto]

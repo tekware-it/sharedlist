@@ -24,25 +24,37 @@ const HEALTHZ_TIMEOUT_MS = 3000;
 async function healthzWithTimeout(): Promise<boolean> {
   try {
     const p = apiHealthz();
+    let timedOut = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     // Evita "Unhandled promise rejection" quando il fetch fallisce *dopo* il timeout
     p.catch((err) => {
-      console.log("[HealthSync] apiHealthz late error:", err);
+      if (timedOut) {
+        console.log("[HealthSync] apiHealthz late error:", err);
+      }
     });
 
-    return await Promise.race<boolean>([
-      p,
-      new Promise<boolean>((resolve) =>
-        setTimeout(() => {
-          console.log(
-            "[HealthSync] /healthz timeout dopo",
-            HEALTHZ_TIMEOUT_MS,
-            "ms, considero offline"
-          );
-          resolve(false);
-        }, HEALTHZ_TIMEOUT_MS)
-      ),
-    ]);
+    return await new Promise<boolean>((resolve) => {
+      timeoutId = setTimeout(() => {
+        timedOut = true;
+        console.log(
+          "[HealthSync] /healthz timeout dopo",
+          HEALTHZ_TIMEOUT_MS,
+          "ms, considero offline"
+        );
+        resolve(false);
+      }, HEALTHZ_TIMEOUT_MS);
+
+      p.then((value) => {
+        if (timedOut) return;
+        if (timeoutId) clearTimeout(timeoutId);
+        resolve(value);
+      }).catch(() => {
+        if (timedOut) return;
+        if (timeoutId) clearTimeout(timeoutId);
+        resolve(false);
+      });
+    });
   } catch (e) {
     console.warn("[HealthSync] apiHealthz error:", e);
     return false;
