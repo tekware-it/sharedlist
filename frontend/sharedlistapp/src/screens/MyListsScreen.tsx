@@ -1,6 +1,6 @@
 // src/screens/MyListsScreen.tsx
 import { subscribeToListPush, unsubscribeFromListPush } from "../push/subscribe";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   View,
@@ -16,6 +16,7 @@ import {
   Modal,
   TextInput,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 import {
   loadStoredItems,
@@ -260,6 +261,7 @@ export const MyListsScreen: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const navigation = useNavigation();
 
   const [lists, setLists] = useState<ListWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -270,6 +272,39 @@ export const MyListsScreen: React.FC<Props> = ({
   const [importLinkText, setImportLinkText] = useState("");
 
   const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  useLayoutEffect(() => {
+    if (Platform.OS !== "ios") return;
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={styles.navHeaderRight}>
+          <TouchableOpacity onPress={showBackendStatusToast}>
+            {backendOnline === null ? (
+              <View style={styles.healthDotUnknown} />
+            ) : backendOnline ? (
+              <View style={styles.healthDotOnline} />
+            ) : (
+              <View style={styles.healthDotOffline} />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.navHeaderButton}
+            onPress={() => setImportDialogVisible(true)}
+          >
+            <Text style={styles.navHeaderIcon}>＋</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.navHeaderButton}
+            onPress={onOpenSettings}
+          >
+            <Text style={styles.navHeaderIcon}>⚙️</Text>
+          </TouchableOpacity>
+        </View>
+      ),
+    });
+  }, [backendOnline, navigation, onOpenSettings, styles]);
 
   function computeHasRemoteChanges(l: StoredList): boolean {
     if (l.removedFromServer) return false;
@@ -779,36 +814,38 @@ export const MyListsScreen: React.FC<Props> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>{t("myLists.title")}</Text>
+      {Platform.OS !== "ios" ? (
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>{t("myLists.title")}</Text>
 
-        <View style={styles.headerRight}>
-          <TouchableOpacity onPress={showBackendStatusToast}>
-            {backendOnline === null ? (
-              <View style={styles.healthDotUnknown} />
-            ) : backendOnline ? (
-              <View style={styles.healthDotOnline} />
-            ) : (
-              <View style={styles.healthDotOffline} />
-            )}
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity onPress={showBackendStatusToast}>
+              {backendOnline === null ? (
+                <View style={styles.healthDotUnknown} />
+              ) : backendOnline ? (
+                <View style={styles.healthDotOnline} />
+              ) : (
+                <View style={styles.healthDotOffline} />
+              )}
+            </TouchableOpacity>
 
-          {/* pulsante + per incollare deep link */}
-          <TouchableOpacity
-            style={styles.headerAddButton}
-            onPress={() => setImportDialogVisible(true)}
-          >
-            <Text style={styles.headerAddIcon}>＋</Text>
-          </TouchableOpacity>
+            {/* pulsante + per incollare deep link */}
+            <TouchableOpacity
+              style={styles.headerAddButton}
+              onPress={() => setImportDialogVisible(true)}
+            >
+              <Text style={styles.headerAddIcon}>＋</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={onOpenSettings}
-          >
-            <Text style={styles.settingsIcon}>⚙️</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={onOpenSettings}
+            >
+              <Text style={styles.settingsIcon}>⚙️</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      ) : null}
 
       {lists.length === 0 ? (
         <Text style={styles.emptyText}>
@@ -928,7 +965,7 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      paddingTop: 48,
+      paddingTop: Platform.OS === "ios" ? 16 : 48,
       paddingHorizontal: 16,
       backgroundColor: colors.background,
     },
@@ -979,6 +1016,10 @@ const makeStyles = (colors: ThemeColors) =>
     headerRight: {
       flexDirection: "row",
       alignItems: "center",
+    },
+    headerTitleSpacer: {
+      width: 1,
+      height: 1,
     },
 
     headerAddButton: {
@@ -1038,6 +1079,19 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: 4,
     },
     settingsIcon: {
+      fontSize: 20,
+      color: colors.text,
+    },
+    navHeaderRight: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    navHeaderButton: {
+      marginLeft: 8,
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+    },
+    navHeaderIcon: {
       fontSize: 20,
       color: colors.text,
     },

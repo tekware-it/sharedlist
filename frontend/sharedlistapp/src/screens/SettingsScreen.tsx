@@ -1,5 +1,5 @@
 // src/screens/SettingsScreen.tsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as RNLocalize from "react-native-localize";
 import { useTranslation } from "react-i18next";
 
@@ -20,6 +20,7 @@ import {
   Switch,
   InteractionManager,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 import {
   loadSettings,
@@ -50,6 +51,7 @@ type BackendTestStatus = "idle" | "testing" | "online" | "offline";
 export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
   const { t, i18n } = useTranslation();
   const { colors, setMode } = useTheme();
+  const navigation = useNavigation();
   const [backendUrl, setBackendUrl] = useState("");
   const [healthIntervalSec, setHealthIntervalSec] = useState("30");
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -410,6 +412,13 @@ function renderLanguageOption(
 
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
+  useLayoutEffect(() => {
+    if (Platform.OS !== "ios") return;
+    navigation.setOptions({
+      headerTitle: t("settings.title"),
+    });
+  }, [navigation, t]);
+
 
 
   //
@@ -427,9 +436,11 @@ function renderLanguageOption(
   return (
     <View style={styles.container}>
       {/* Header: solo titolo, back = tasto hardware su Android */}
-      <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>{t("settings.title")}</Text>
-      </View>
+      {Platform.OS !== "ios" ? (
+        <View style={styles.headerRow}>
+          <Text style={styles.headerTitle}>{t("settings.title")}</Text>
+        </View>
+      ) : null}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <TouchableOpacity onPress={openServerDialog}>
@@ -735,7 +746,7 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      paddingTop: 48,
+      paddingTop: Platform.OS === "ios" ? 16 : 48,
       paddingHorizontal: 16,
       backgroundColor: colors.background,
     },

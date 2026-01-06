@@ -1,5 +1,5 @@
 // src/screens/ListScreen.tsx
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import {
   ToastAndroid,
 } from "react-native";
 import { useTranslation } from "react-i18next";
+import { useNavigation } from "@react-navigation/native";
 
 import {
   apiGetList,
@@ -80,6 +81,7 @@ const fallbackFlagsDefinition: FlagsDefinition = {
 export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const navigation = useNavigation();
 
   const [meta, setMeta] = useState<ListMeta | null>(null);
   const [items, setItems] = useState<ItemView[]>([]);
@@ -92,6 +94,47 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const insets = useSafeAreaInsets();
 
   const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  useLayoutEffect(() => {
+    if (Platform.OS !== "ios") return;
+    navigation.setOptions({
+      headerTitle: meta?.name ?? t("list.title_fallback"),
+      headerRight: () => (
+        <View style={styles.navHeaderRight}>
+          <TouchableOpacity onPress={showBackendStatusToast}>
+            {backendOnline === null ? (
+              <View style={styles.healthDotUnknown} />
+            ) : backendOnline ? (
+              <View style={styles.healthDotOnline} />
+            ) : (
+              <View style={styles.healthDotOffline} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.navHeaderButton}
+            onPress={handleCopyAsText}
+          >
+            <Text style={styles.navHeaderIcon}>📋</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.navHeaderButton}
+            onPress={handleShare}
+          >
+            <Text style={styles.navHeaderIcon}>📤</Text>
+          </TouchableOpacity>
+        </View>
+      ),
+    });
+  }, [
+    backendOnline,
+    handleCopyAsText,
+    handleShare,
+    meta?.name,
+    navigation,
+    showBackendStatusToast,
+    styles,
+    t,
+  ]);
 
 
   const { orderedItems, firstCrossedIndex } = useMemo(() => {
@@ -990,38 +1033,42 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       keyboardVerticalOffset={Platform.OS === "ios" ? headerHeight : 0}
     >
       <View style={styles.container}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>{meta?.name ?? t("list.title_fallback")}</Text>
+        {Platform.OS !== "ios" ? (
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>
+              {meta?.name ?? t("list.title_fallback")}
+            </Text>
 
-          <View style={styles.headerActions}>
-            {/* pallino health a destra, prima delle icone */}
-                <TouchableOpacity
-                  style={styles.headerHealthDotButton}
-                  onPress={showBackendStatusToast}
-                >
-                  {backendOnline === null ? (
-                    <View style={styles.healthDotUnknown} />
-                  ) : backendOnline ? (
-                    <View style={styles.healthDotOnline} />
-                  ) : (
-                    <View style={styles.healthDotOffline} />
-                  )}
-                </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.headerIconButton}
-              onPress={handleCopyAsText}
-            >
-              <Text style={styles.headerIconText}>📋</Text>
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              {/* pallino health a destra, prima delle icone */}
+              <TouchableOpacity
+                style={styles.headerHealthDotButton}
+                onPress={showBackendStatusToast}
+              >
+                {backendOnline === null ? (
+                  <View style={styles.healthDotUnknown} />
+                ) : backendOnline ? (
+                  <View style={styles.healthDotOnline} />
+                ) : (
+                  <View style={styles.healthDotOffline} />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={handleCopyAsText}
+              >
+                <Text style={styles.headerIconText}>📋</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.headerIconButton}
-              onPress={handleShare}
-            >
-              <Text style={styles.headerIconText}>📤</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={handleShare}
+              >
+                <Text style={styles.headerIconText}>📤</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        ) : null}
 
         {items.length === 0 ? (
           <Text style={styles.emptyText}>Nessun elemento nella lista.</Text>
@@ -1150,7 +1197,7 @@ const makeStyles = (colors: ThemeColors) =>
     flex: { flex: 1, backgroundColor: colors.background },
     container: {
       flex: 1,
-      paddingTop: 48,
+      paddingTop: Platform.OS === "ios" ? 16 : 48,
       paddingHorizontal: 16,
       backgroundColor: colors.background,
     },
@@ -1258,6 +1305,19 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: 4,
     },
     headerIconText: {
+      fontSize: 20,
+      color: colors.text,
+    },
+    navHeaderRight: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    navHeaderButton: {
+      marginLeft: 8,
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+    },
+    navHeaderIcon: {
       fontSize: 20,
       color: colors.text,
     },
