@@ -1,8 +1,0 @@
-/* Class = "UILabel"; text = "Liste Partagée"; ObjectID = "GJd-Yh-RWb"; */
-"GJd-Yh-RWb.text" = "Liste Partagée";
-
-/* Class = "UILabel"; text = "(SharedList)"; ObjectID = "P0m-2Y-qX4"; */
-"P0m-2Y-qX4.text" = "(SharedList)";
-
-/* Class = "UILabel"; text = "Propulsé par React Native"; ObjectID = "MN2-I3-ftu"; */
-"MN2-I3-ftu.text" = "Propulsé par React Native";
