@@ -1,5 +1,8 @@
-/* Class = "UILabel"; text = "sharedlistapp"; ObjectID = "GJd-Yh-RWb"; */
-"GJd-Yh-RWb.text" = "SharedList";
+/* Class = "UILabel"; text = "共享清单"; ObjectID = "GJd-Yh-RWb"; */
+"GJd-Yh-RWb.text" = "共享清单";
 
-/* Class = "UILabel"; text = "Powered by React Native"; ObjectID = "MN2-I3-ftu"; */
+/* Class = "UILabel"; text = "(SharedList)"; ObjectID = "P0m-2Y-qX4"; */
+"P0m-2Y-qX4.text" = "(SharedList)";
+
+/* Class = "UILabel"; text = "由 React Native 驱动"; ObjectID = "MN2-I3-ftu"; */
 "MN2-I3-ftu.text" = "由 React Native 驱动";
