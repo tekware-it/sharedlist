@@ -12,24 +12,9 @@
 		2328E204DC1D94CD3BCD5672 /* libPods-sharedlistapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9778A5A29CFD0AB30D98E7CD /* libPods-sharedlistapp.a */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		77F8951E9C93ACBB6721ED63 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
-		A1B2C3D4E5F60718293A4B5E /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B5F /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5D /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B60 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5A /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B61 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5B /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B62 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B59 /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B63 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B58 /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B64 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B57 /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B79 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B70 /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B7A /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B71 /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B7B /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B72 /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B7C /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B73 /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B7D /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B74 /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B7E /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B75 /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B7F /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B76 /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B80 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B77 /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B81 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B78 /* LaunchScreen.strings */; };
-		A1B2C3D4E5F60718293A4B82 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B69 /* LaunchScreen.strings */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		D0D0D0D0D0D0D0D0D0D0B001 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = D0D0D0D0D0D0D0D0D0D0D001 /* LaunchScreen.strings */; };
+		D0D0D0D0D0D0D0D0D0D0B002 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D0D0D0D0D0D0D0D0D0D0D002 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -81,24 +66,9 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
+				D0D0D0D0D0D0D0D0D0D0D002 /* InfoPlist.strings */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
-				A1B2C3D4E5F60718293A4B57 /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B70 /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B71 /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B72 /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B73 /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B74 /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B75 /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B76 /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B77 /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B78 /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B69 /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B58 /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B59 /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B5A /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B5B /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B5C /* LaunchScreen.strings */,
-				A1B2C3D4E5F60718293A4B5D /* LaunchScreen.strings */,
+				D0D0D0D0D0D0D0D0D0D0D001 /* LaunchScreen.strings */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 			);
 			name = sharedlistapp;
@@ -153,6 +123,57 @@
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
+
+/* Begin PBXVariantGroup section */
+		D0D0D0D0D0D0D0D0D0D0D001 /* LaunchScreen.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A1B2C3D4E5F60718293A4B5C /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B5D /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B5A /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B5B /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B59 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B58 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B57 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B70 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B71 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B72 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B73 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B74 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B75 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B76 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B77 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B78 /* LaunchScreen.strings */,
+				A1B2C3D4E5F60718293A4B69 /* LaunchScreen.strings */,
+			);
+			name = LaunchScreen.strings;
+			sourceTree = "<group>";
+		};
+		D0D0D0D0D0D0D0D0D0D0D002 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C0FFEE000000000000000001 /* InfoPlist.strings */,
+				C0FFEE000000000000000002 /* InfoPlist.strings */,
+				C0FFEE000000000000000003 /* InfoPlist.strings */,
+				C0FFEE000000000000000004 /* InfoPlist.strings */,
+				C0FFEE000000000000000005 /* InfoPlist.strings */,
+				C0FFEE000000000000000006 /* InfoPlist.strings */,
+				C0FFEE000000000000000007 /* InfoPlist.strings */,
+				C0FFEE000000000000000008 /* InfoPlist.strings */,
+				C0FFEE000000000000000009 /* InfoPlist.strings */,
+				C0FFEE00000000000000000A /* InfoPlist.strings */,
+				C0FFEE00000000000000000B /* InfoPlist.strings */,
+				C0FFEE00000000000000000C /* InfoPlist.strings */,
+				C0FFEE00000000000000000D /* InfoPlist.strings */,
+				C0FFEE00000000000000000E /* InfoPlist.strings */,
+				C0FFEE00000000000000000F /* InfoPlist.strings */,
+				C0FFEE000000000000000010 /* InfoPlist.strings */,
+				C0FFEE000000000000000011 /* InfoPlist.strings */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin PBXNativeTarget section */
 		13B07F861A680F5B00A75B9A /* sharedlistapp */ = {
@@ -230,40 +251,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
-				A1B2C3D4E5F60718293A4B5E /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B5F /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B60 /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B61 /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B62 /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B63 /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B64 /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B79 /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B7A /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B7B /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B7C /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B7D /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B7E /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B7F /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B80 /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B81 /* LaunchScreen.strings in Resources */,
-				A1B2C3D4E5F60718293A4B82 /* LaunchScreen.strings in Resources */,
-				C0FFEF000000000000000001 /* InfoPlist.strings in Resources */,
-				C0FFEF000000000000000002 /* InfoPlist.strings in Resources */,
-				C0FFEF000000000000000003 /* InfoPlist.strings in Resources */,
-				C0FFEF000000000000000004 /* InfoPlist.strings in Resources */,
-				C0FFEF000000000000000005 /* InfoPlist.strings in Resources */,
-				C0FFEF000000000000000006 /* InfoPlist.strings in Resources */,
-				C0FFEF000000000000000007 /* InfoPlist.strings in Resources */,
-				C0FFEF000000000000000008 /* InfoPlist.strings in Resources */,
-				C0FFEF000000000000000009 /* InfoPlist.strings in Resources */,
-				C0FFEF00000000000000000A /* InfoPlist.strings in Resources */,
-				C0FFEF00000000000000000B /* InfoPlist.strings in Resources */,
-				C0FFEF00000000000000000C /* InfoPlist.strings in Resources */,
-				C0FFEF00000000000000000D /* InfoPlist.strings in Resources */,
-				C0FFEF00000000000000000E /* InfoPlist.strings in Resources */,
-				C0FFEF00000000000000000F /* InfoPlist.strings in Resources */,
-				C0FFEF000000000000000010 /* InfoPlist.strings in Resources */,
-				C0FFEF000000000000000011 /* InfoPlist.strings in Resources */,
+				D0D0D0D0D0D0D0D0D0D0B001 /* LaunchScreen.strings in Resources */,
+				D0D0D0D0D0D0D0D0D0D0B002 /* InfoPlist.strings in Resources */,
 				0F280A912EF9A82E002BC0A6 /* GoogleService-Info.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				77F8951E9C93ACBB6721ED63 /* PrivacyInfo.xcprivacy in Resources */,
