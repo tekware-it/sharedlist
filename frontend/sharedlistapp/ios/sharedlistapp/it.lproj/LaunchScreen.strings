@@ -1,5 +1,8 @@
-/* Class = "UILabel"; text = "sharedlistapp"; ObjectID = "GJd-Yh-RWb"; */
-"GJd-Yh-RWb.text" = "SharedList";
+/* Class = "UILabel"; text = "Lista Condivisa"; ObjectID = "GJd-Yh-RWb"; */
+"GJd-Yh-RWb.text" = "Lista Condivisa";
 
-/* Class = "UILabel"; text = "Powered by React Native"; ObjectID = "MN2-I3-ftu"; */
+/* Class = "UILabel"; text = "(SharedList)"; ObjectID = "P0m-2Y-qX4"; */
+"P0m-2Y-qX4.text" = "(SharedList)";
+
+/* Class = "UILabel"; text = "Basato su React Native"; ObjectID = "MN2-I3-ftu"; */
 "MN2-I3-ftu.text" = "Basato su React Native";

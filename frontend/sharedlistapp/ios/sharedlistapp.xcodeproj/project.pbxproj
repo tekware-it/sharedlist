@@ -30,6 +30,23 @@
 		A1B2C3D4E5F60718293A4B80 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B77 /* LaunchScreen.strings */; };
 		A1B2C3D4E5F60718293A4B81 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B78 /* LaunchScreen.strings */; };
 		A1B2C3D4E5F60718293A4B82 /* LaunchScreen.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B69 /* LaunchScreen.strings */; };
+		C0FFEF000000000000000001 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000001 /* InfoPlist.strings */; };
+		C0FFEF000000000000000002 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000002 /* InfoPlist.strings */; };
+		C0FFEF000000000000000003 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000003 /* InfoPlist.strings */; };
+		C0FFEF000000000000000004 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000004 /* InfoPlist.strings */; };
+		C0FFEF000000000000000005 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000005 /* InfoPlist.strings */; };
+		C0FFEF000000000000000006 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000006 /* InfoPlist.strings */; };
+		C0FFEF000000000000000007 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000007 /* InfoPlist.strings */; };
+		C0FFEF000000000000000008 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000008 /* InfoPlist.strings */; };
+		C0FFEF000000000000000009 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000009 /* InfoPlist.strings */; };
+		C0FFEF00000000000000000A /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE00000000000000000A /* InfoPlist.strings */; };
+		C0FFEF00000000000000000B /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE00000000000000000B /* InfoPlist.strings */; };
+		C0FFEF00000000000000000C /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE00000000000000000C /* InfoPlist.strings */; };
+		C0FFEF00000000000000000D /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE00000000000000000D /* InfoPlist.strings */; };
+		C0FFEF00000000000000000E /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE00000000000000000E /* InfoPlist.strings */; };
+		C0FFEF00000000000000000F /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE00000000000000000F /* InfoPlist.strings */; };
+		C0FFEF000000000000000010 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000010 /* InfoPlist.strings */; };
+		C0FFEF000000000000000011 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000011 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -59,6 +76,23 @@
 		A1B2C3D4E5F60718293A4B76 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/da.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B77 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/fi.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B78 /* LaunchScreen.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = LaunchScreen.strings; path = sharedlistapp/pl.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		C0FFEE000000000000000001 /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE000000000000000002 /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/it.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE000000000000000003 /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE000000000000000004 /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE000000000000000005 /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/pt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE000000000000000006 /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = "sharedlistapp/pt-BR.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		C0FFEE000000000000000007 /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = "sharedlistapp/zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		C0FFEE000000000000000008 /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/hi.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE000000000000000009 /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/ar.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE00000000000000000A /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE00000000000000000B /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE00000000000000000C /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/nl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE00000000000000000D /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/sv.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE00000000000000000E /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/da.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE00000000000000000F /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/fi.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE000000000000000010 /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/pl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0FFEE000000000000000011 /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = "sharedlistapp/el-GR.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		B3B2319454798631D1C95978 /* Pods-sharedlistapp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sharedlistapp.debug.xcconfig"; path = "Target Support Files/Pods-sharedlistapp/Pods-sharedlistapp.debug.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -99,6 +133,23 @@
 				A1B2C3D4E5F60718293A4B5B /* LaunchScreen.strings */,
 				A1B2C3D4E5F60718293A4B5C /* LaunchScreen.strings */,
 				A1B2C3D4E5F60718293A4B5D /* LaunchScreen.strings */,
+				C0FFEE000000000000000001 /* InfoPlist.strings */,
+				C0FFEE000000000000000002 /* InfoPlist.strings */,
+				C0FFEE000000000000000003 /* InfoPlist.strings */,
+				C0FFEE000000000000000004 /* InfoPlist.strings */,
+				C0FFEE000000000000000005 /* InfoPlist.strings */,
+				C0FFEE000000000000000006 /* InfoPlist.strings */,
+				C0FFEE000000000000000007 /* InfoPlist.strings */,
+				C0FFEE000000000000000008 /* InfoPlist.strings */,
+				C0FFEE000000000000000009 /* InfoPlist.strings */,
+				C0FFEE00000000000000000A /* InfoPlist.strings */,
+				C0FFEE00000000000000000B /* InfoPlist.strings */,
+				C0FFEE00000000000000000C /* InfoPlist.strings */,
+				C0FFEE00000000000000000D /* InfoPlist.strings */,
+				C0FFEE00000000000000000E /* InfoPlist.strings */,
+				C0FFEE00000000000000000F /* InfoPlist.strings */,
+				C0FFEE000000000000000010 /* InfoPlist.strings */,
+				C0FFEE000000000000000011 /* InfoPlist.strings */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 			);
 			name = sharedlistapp;
@@ -247,6 +298,23 @@
 				A1B2C3D4E5F60718293A4B80 /* LaunchScreen.strings in Resources */,
 				A1B2C3D4E5F60718293A4B81 /* LaunchScreen.strings in Resources */,
 				A1B2C3D4E5F60718293A4B82 /* LaunchScreen.strings in Resources */,
+				C0FFEF000000000000000001 /* InfoPlist.strings in Resources */,
+				C0FFEF000000000000000002 /* InfoPlist.strings in Resources */,
+				C0FFEF000000000000000003 /* InfoPlist.strings in Resources */,
+				C0FFEF000000000000000004 /* InfoPlist.strings in Resources */,
+				C0FFEF000000000000000005 /* InfoPlist.strings in Resources */,
+				C0FFEF000000000000000006 /* InfoPlist.strings in Resources */,
+				C0FFEF000000000000000007 /* InfoPlist.strings in Resources */,
+				C0FFEF000000000000000008 /* InfoPlist.strings in Resources */,
+				C0FFEF000000000000000009 /* InfoPlist.strings in Resources */,
+				C0FFEF00000000000000000A /* InfoPlist.strings in Resources */,
+				C0FFEF00000000000000000B /* InfoPlist.strings in Resources */,
+				C0FFEF00000000000000000C /* InfoPlist.strings in Resources */,
+				C0FFEF00000000000000000D /* InfoPlist.strings in Resources */,
+				C0FFEF00000000000000000E /* InfoPlist.strings in Resources */,
+				C0FFEF00000000000000000F /* InfoPlist.strings in Resources */,
+				C0FFEF000000000000000010 /* InfoPlist.strings in Resources */,
+				C0FFEF000000000000000011 /* InfoPlist.strings in Resources */,
 				0F280A912EF9A82E002BC0A6 /* GoogleService-Info.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				77F8951E9C93ACBB6721ED63 /* PrivacyInfo.xcprivacy in Resources */,
