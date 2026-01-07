@@ -21,6 +21,7 @@ import {
   InteractionManager,
   DevSettings,
   NativeModules,
+  I18nManager,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
@@ -65,6 +66,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
   const [editHealthSec, setEditHealthSec] = useState("");
   const [langDialogVisible, setLangDialogVisible] = useState(false);
   const [themeDialogVisible, setThemeDialogVisible] = useState(false);
+  const [supportDialogVisible, setSupportDialogVisible] = useState(false);
 
   const [backendTestStatus, setBackendTestStatus] =
     useState<BackendTestStatus>("idle");
@@ -107,6 +109,10 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
     const sub = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
+        if (supportDialogVisible) {
+          setSupportDialogVisible(false);
+          return true;
+        }
         if (activeDialog !== "none") {
           setActiveDialog("none");
           return true;
@@ -117,7 +123,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
     );
 
     return () => sub.remove();
-  }, [activeDialog, onClose]);
+  }, [activeDialog, onClose, supportDialogVisible]);
 
   //
   // TEST dell'URL backend (per la dialog "Server")
@@ -298,11 +304,16 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
   }
 
   function handleDonate() {
+    setSupportDialogVisible(true);
+  }
+
+  function handleOpenDonateLink() {
     const url = "https://buymeacoffee.com/sharedlist";
     Linking.openURL(url).catch((e) => {
       console.warn(e);
       Alert.alert(t("common.error_title"), t("settings.open_browser_failed"));
     });
+    setSupportDialogVisible(false);
   }
 
     function languageLabel(lang: LanguageOption): string {
@@ -469,6 +480,7 @@ function renderLanguageOption(
 
   const openThemeDialog = () => setThemeDialogVisible(true);
   const closeThemeDialog = () => setThemeDialogVisible(false);
+  const closeSupportDialog = () => setSupportDialogVisible(false);
 
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
@@ -564,6 +576,42 @@ function renderLanguageOption(
           </View>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Dialog Supporto */}
+      <Modal
+        transparent
+        visible={supportDialogVisible}
+        animationType="fade"
+        presentationStyle="overFullScreen"
+        supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
+        onRequestClose={closeSupportDialog}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t("settings.donate_cta")}</Text>
+            <Text style={styles.modalBody}>{t("settings.support_body")}</Text>
+
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={closeSupportDialog}
+              >
+                <Text style={styles.modalButtonText}>
+                  {t("settings.support_later")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonPrimary]}
+                onPress={handleOpenDonateLink}
+              >
+                <Text style={[styles.modalButtonText, { color: "white" }]}>
+                  {t("settings.support_primary")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Dialog Lingua */}
       <Modal
@@ -902,6 +950,13 @@ const makeStyles = (colors: ThemeColors) =>
       fontWeight: "600",
       marginBottom: 12,
       color: colors.text,
+      textAlign: I18nManager.isRTL ? "right" : "left",
+    },
+    modalBody: {
+      fontSize: 14,
+      color: colors.text,
+      lineHeight: 20,
+      textAlign: I18nManager.isRTL ? "right" : "left",
     },
     rowLabel: {
       fontSize: 14,
@@ -921,7 +976,7 @@ const makeStyles = (colors: ThemeColors) =>
       backgroundColor: colors.inputBackground,
     },
     modalButtonsRow: {
-      flexDirection: "row",
+      flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
       justifyContent: "flex-end",
       marginTop: 16,
     },
