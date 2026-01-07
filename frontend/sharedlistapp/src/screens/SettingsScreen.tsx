@@ -19,6 +19,8 @@ import {
   BackHandler,
   Switch,
   InteractionManager,
+  DevSettings,
+  NativeModules,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
@@ -66,6 +68,17 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
 
   const [backendTestStatus, setBackendTestStatus] =
     useState<BackendTestStatus>("idle");
+
+  function restartApp() {
+    const rnRestart = (NativeModules as any)?.RNRestart?.restart;
+    if (typeof rnRestart === "function") {
+      rnRestart();
+      return;
+    }
+    if (typeof DevSettings?.reload === "function") {
+      DevSettings.reload();
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -367,9 +380,14 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
         ToastAndroid.show(i18n.t("common.language_updated"), ToastAndroid.SHORT);
       }
       if (restartNeeded) {
+        const tNext = (key: string) => i18n.t(key, { lng: nextLang });
         Alert.alert(
-          t("settings.restart_required_title"),
-          t("settings.restart_required_msg")
+          tNext("settings.restart_required_title"),
+          tNext("settings.restart_required_msg"),
+          [
+            { text: tNext("settings.restart_later"), style: "cancel" },
+            { text: tNext("settings.restart_now"), onPress: restartApp },
+          ]
         );
       }
     } catch (e) {
@@ -560,28 +578,34 @@ function renderLanguageOption(
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{t("settings.language_dialog_title")}</Text>
 
-            {renderLanguageOption(
-              "system",
-              t("settings.language_option_system"),
-              t("settings.language_option_system_desc")
-            )}
-            {renderLanguageOption("it", t("settings.language_option_it"))}
-            {renderLanguageOption("en", t("settings.language_option_en"))}
-            {renderLanguageOption("fr", t("settings.language_option_fr"))}
-            {renderLanguageOption("es", t("settings.language_option_es"))}
-            {renderLanguageOption("pt", t("settings.language_option_pt"))}
-            {renderLanguageOption("pt-BR", t("settings.language_option_pt_br"))}
-            {renderLanguageOption("zh-Hans", t("settings.language_option_zh_hans"))}
-            {renderLanguageOption("hi", t("settings.language_option_hi"))}
-            {renderLanguageOption("ar", t("settings.language_option_ar"))}
-            {renderLanguageOption("ru", t("settings.language_option_ru"))}
-            {renderLanguageOption("de", t("settings.language_option_de"))}
-            {renderLanguageOption("nl", t("settings.language_option_nl"))}
-            {renderLanguageOption("sv", t("settings.language_option_sv"))}
-            {renderLanguageOption("da", t("settings.language_option_da"))}
-            {renderLanguageOption("fi", t("settings.language_option_fi"))}
-            {renderLanguageOption("pl", t("settings.language_option_pl"))}
-            {renderLanguageOption("el-GR", t("settings.language_option_el_gr"))}
+            <ScrollView
+              style={styles.modalScroll}
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator
+            >
+              {renderLanguageOption(
+                "system",
+                t("settings.language_option_system"),
+                t("settings.language_option_system_desc")
+              )}
+              {renderLanguageOption("it", t("settings.language_option_it"))}
+              {renderLanguageOption("en", t("settings.language_option_en"))}
+              {renderLanguageOption("fr", t("settings.language_option_fr"))}
+              {renderLanguageOption("es", t("settings.language_option_es"))}
+              {renderLanguageOption("pt", t("settings.language_option_pt"))}
+              {renderLanguageOption("pt-BR", t("settings.language_option_pt_br"))}
+              {renderLanguageOption("zh-Hans", t("settings.language_option_zh_hans"))}
+              {renderLanguageOption("hi", t("settings.language_option_hi"))}
+              {renderLanguageOption("ar", t("settings.language_option_ar"))}
+              {renderLanguageOption("ru", t("settings.language_option_ru"))}
+              {renderLanguageOption("de", t("settings.language_option_de"))}
+              {renderLanguageOption("nl", t("settings.language_option_nl"))}
+              {renderLanguageOption("sv", t("settings.language_option_sv"))}
+              {renderLanguageOption("da", t("settings.language_option_da"))}
+              {renderLanguageOption("fi", t("settings.language_option_fi"))}
+              {renderLanguageOption("pl", t("settings.language_option_pl"))}
+              {renderLanguageOption("el-GR", t("settings.language_option_el_gr"))}
+            </ScrollView>
 
             <View style={styles.modalButtonsRow}>
               <TouchableOpacity
@@ -865,6 +889,13 @@ const makeStyles = (colors: ThemeColors) =>
       backgroundColor: colors.modalBackground,
       borderRadius: 8,
       padding: 16,
+    },
+    modalScroll: {
+      maxHeight: 360,
+      marginTop: 4,
+    },
+    modalScrollContent: {
+      paddingBottom: 4,
     },
     modalTitle: {
       fontSize: 16,

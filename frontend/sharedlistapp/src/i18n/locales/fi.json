@@ -150,6 +150,8 @@
   "settings.save_theme_failed": "Teemaa ei voitu päivittää.",
   "settings.restart_required_title": "Uudelleenkäynnistys vaaditaan",
   "settings.restart_required_msg": "Käynnistä sovellus uudelleen, jotta asettelun suunta tulee voimaan.",
+  "settings.restart_now": "Käynnistä uudelleen",
+  "settings.restart_later": "Myöhemmin",
   "myLists.reinsert_on_server": "Lisää uudelleen palvelimelle",
   "myLists.reinsert_done": "Uudelleenlisäys valmis",
   "myLists.reinsert_queued": "Uudelleenlisäys jonossa",

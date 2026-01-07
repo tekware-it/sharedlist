@@ -150,6 +150,8 @@
   "settings.save_theme_failed": "थीम अपडेट नहीं हो सकी।",
   "settings.restart_required_title": "रीस्टार्ट आवश्यक",
   "settings.restart_required_msg": "लेआउट दिशा लागू करने के लिए ऐप रीस्टार्ट करें।",
+  "settings.restart_now": "अभी रीस्टार्ट करें",
+  "settings.restart_later": "बाद में",
   "myLists.reinsert_on_server": "सर्वर पर फिर से डालें",
   "myLists.reinsert_done": "फिर से डालना पूरा हुआ",
   "myLists.reinsert_queued": "सिंक के लिए कतार में डाला गया",

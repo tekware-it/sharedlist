@@ -150,6 +150,8 @@
   "settings.save_theme_failed": "Design konnte nicht aktualisiert werden.",
   "settings.restart_required_title": "Neustart erforderlich",
   "settings.restart_required_msg": "Bitte starte die App neu, um die Layout-Richtung anzuwenden.",
+  "settings.restart_now": "Jetzt neu starten",
+  "settings.restart_later": "Später",
   "myLists.reinsert_on_server": "Auf dem Server erneut einfügen",
   "myLists.reinsert_done": "Wiedereinfügung abgeschlossen",
   "myLists.reinsert_queued": "Wiedereinfügung zur Synchronisierung vorgemerkt",

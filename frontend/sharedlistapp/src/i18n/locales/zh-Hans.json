@@ -150,6 +150,8 @@
   "settings.save_theme_failed": "无法更新主题。",
   "settings.restart_required_title": "需要重启",
   "settings.restart_required_msg": "请重启应用以应用界面方向。",
+  "settings.restart_now": "立即重启",
+  "settings.restart_later": "稍后",
   "myLists.reinsert_on_server": "重新插入到服务器",
   "myLists.reinsert_done": "重新插入完成",
   "myLists.reinsert_queued": "已排队等待同步",

@@ -150,6 +150,8 @@
   "settings.save_theme_failed": "Thema kon niet worden bijgewerkt.",
   "settings.restart_required_title": "Herstart vereist",
   "settings.restart_required_msg": "Herstart de app om de layoutrichting toe te passen.",
+  "settings.restart_now": "Nu herstarten",
+  "settings.restart_later": "Later",
   "myLists.reinsert_on_server": "Opnieuw op de server zetten",
   "myLists.reinsert_done": "Opnieuw toegevoegd",
   "myLists.reinsert_queued": "Opnieuw toegevoegd aan synchronisatiewachtrij",

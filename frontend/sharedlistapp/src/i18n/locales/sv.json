@@ -150,6 +150,8 @@
   "settings.save_theme_failed": "Kunde inte uppdatera temat.",
   "settings.restart_required_title": "Omstart krävs",
   "settings.restart_required_msg": "Starta om appen för att tillämpa layout-riktningen.",
+  "settings.restart_now": "Starta om nu",
+  "settings.restart_later": "Senare",
   "myLists.reinsert_on_server": "Återinför på servern",
   "myLists.reinsert_done": "Återinföring klar",
   "myLists.reinsert_queued": "Återinföring köad för synk",

@@ -150,6 +150,8 @@
   "settings.save_theme_failed": "تعذر تحديث السمة.",
   "settings.restart_required_title": "إعادة تشغيل مطلوبة",
   "settings.restart_required_msg": "أعد تشغيل التطبيق لتطبيق اتجاه الواجهة.",
+  "settings.restart_now": "إعادة التشغيل الآن",
+  "settings.restart_later": "لاحقًا",
   "myLists.reinsert_on_server": "إعادة إدراج على الخادم",
   "myLists.reinsert_done": "تمت إعادة الإدراج",
   "myLists.reinsert_queued": "تمت إضافتها لطابور المزامنة",

@@ -150,6 +150,8 @@
   "settings.save_theme_failed": "Couldn't update the theme.",
   "settings.restart_required_title": "Restart required",
   "settings.restart_required_msg": "Restart the app to apply the layout direction.",
+  "settings.restart_now": "Restart now",
+  "settings.restart_later": "Later",
   "myLists.reinsert_on_server": "Reinsert on server",
   "myLists.reinsert_done": "Reinsert completed",
   "myLists.reinsert_queued": "Reinsert queued for sync",

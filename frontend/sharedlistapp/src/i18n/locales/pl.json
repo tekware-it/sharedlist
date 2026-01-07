@@ -150,6 +150,8 @@
   "settings.save_theme_failed": "Nie udało się zaktualizować motywu.",
   "settings.restart_required_title": "Wymagany restart",
   "settings.restart_required_msg": "Uruchom ponownie aplikację, aby zastosować kierunek układu.",
+  "settings.restart_now": "Uruchom ponownie",
+  "settings.restart_later": "Później",
   "myLists.reinsert_on_server": "Wstaw ponownie na serwer",
   "myLists.reinsert_done": "Ponowne wstawienie zakończone",
   "myLists.reinsert_queued": "Ponowne wstawienie w kolejce do synchronizacji",

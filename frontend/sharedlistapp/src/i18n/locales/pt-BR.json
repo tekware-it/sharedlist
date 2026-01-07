@@ -150,6 +150,8 @@
   "settings.save_theme_failed": "Não foi possível atualizar o tema.",
   "settings.restart_required_title": "Reinício necessário",
   "settings.restart_required_msg": "Reinicie o app para aplicar a direção do layout.",
+  "settings.restart_now": "Reiniciar agora",
+  "settings.restart_later": "Mais tarde",
   "myLists.reinsert_on_server": "Reinserir no servidor",
   "myLists.reinsert_done": "Reinserção concluída",
   "myLists.reinsert_queued": "Reinserção na fila para sincronização",

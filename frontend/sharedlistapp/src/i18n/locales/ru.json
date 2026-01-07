@@ -150,6 +150,8 @@
   "settings.save_theme_failed": "Не удалось обновить тему.",
   "settings.restart_required_title": "Требуется перезапуск",
   "settings.restart_required_msg": "Перезапустите приложение, чтобы применить направление интерфейса.",
+  "settings.restart_now": "Перезапустить сейчас",
+  "settings.restart_later": "Позже",
   "myLists.reinsert_on_server": "Повторно добавить на сервер",
   "myLists.reinsert_done": "Повторное добавление завершено",
   "myLists.reinsert_queued": "Повторное добавление поставлено в очередь",

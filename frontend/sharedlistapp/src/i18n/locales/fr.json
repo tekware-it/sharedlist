@@ -150,6 +150,8 @@
   "settings.save_theme_failed": "Impossible de mettre à jour le thème.",
   "settings.restart_required_title": "Redémarrage requis",
   "settings.restart_required_msg": "Redémarrez l'app pour appliquer la direction de l'interface.",
+  "settings.restart_now": "Redémarrer maintenant",
+  "settings.restart_later": "Plus tard",
   "myLists.reinsert_on_server": "Réinsérer sur le serveur",
   "myLists.reinsert_done": "Réinsertion terminée",
   "myLists.reinsert_queued": "Réinsertion mise en file de synchronisation",

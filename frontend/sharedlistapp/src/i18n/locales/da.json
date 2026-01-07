@@ -150,6 +150,8 @@
   "settings.save_theme_failed": "Kunne ikke opdatere temaet.",
   "settings.restart_required_title": "Genstart kræves",
   "settings.restart_required_msg": "Genstart appen for at anvende layoutretningen.",
+  "settings.restart_now": "Genstart nu",
+  "settings.restart_later": "Senere",
   "myLists.reinsert_on_server": "Genindsæt på serveren",
   "myLists.reinsert_done": "Genindsættelse fuldført",
   "myLists.reinsert_queued": "Genindsættelse sat i kø til synk",

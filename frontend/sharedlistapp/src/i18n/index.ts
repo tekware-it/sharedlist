@@ -43,6 +43,7 @@ const resources = {
 } as const;
 
 const RTL_LANGS = new Set(["ar", "he", "iw", "fa", "ur", "yi"]);
+const layoutRtlAtLaunch = I18nManager.isRTL;
 
 function normalizeLangCode(code: string): string {
   return code.split("-")[0].toLowerCase();
@@ -54,7 +55,7 @@ export function isRtlLanguage(code: string): boolean {
 
 export function needsRtlRestart(nextLang: string): boolean {
   const nextIsRtl = isRtlLanguage(nextLang);
-  return I18nManager.isRTL !== nextIsRtl;
+  return layoutRtlAtLaunch !== nextIsRtl;
 }
 
 export function applyRtlForLanguage(lang: string) {
@@ -162,7 +163,6 @@ i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
 });
 
-applyRtlForLanguage(i18n.language);
 i18n.on("languageChanged", (lang) => {
   applyRtlForLanguage(lang);
 });

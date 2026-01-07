@@ -150,6 +150,8 @@
   "settings.save_theme_failed": "Δεν ήταν δυνατή η ενημέρωση του θέματος.",
   "settings.restart_required_title": "Απαιτείται επανεκκίνηση",
   "settings.restart_required_msg": "Κάντε επανεκκίνηση της εφαρμογής για να εφαρμοστεί η κατεύθυνση της διάταξης.",
+  "settings.restart_now": "Επανεκκίνηση τώρα",
+  "settings.restart_later": "Αργότερα",
   "myLists.reinsert_on_server": "Επανεισαγωγή στον server",
   "myLists.reinsert_done": "Η επανεισαγωγή ολοκληρώθηκε",
   "myLists.reinsert_queued": "Η επανεισαγωγή προστέθηκε στην ουρά συγχρονισμού",
