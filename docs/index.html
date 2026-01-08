@@ -1,31 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Shared List – Privacy Policy</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex" />
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 0 16px;
-      line-height: 1.6;
-      color: #111;
-    }
-    h1, h2 {
-      line-height: 1.25;
-    }
-    h1 {
-      margin-bottom: 0.5em;
-    }
-    footer {
-      margin-top: 48px;
-      font-size: 0.9em;
-      color: #555;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <title>Shared List – Privacy Policy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+          max-width: 800px;
+          margin: 40px auto;
+          padding: 0 16px;
+          line-height: 1.6;
+          color: #111;
+        }
+        h1, h2 { line-height: 1.25; }
+        h1 { margin-bottom: 0.5em; }
+        footer {
+          margin-top: 48px;
+          font-size: 0.9em;
+          color: #555;
+        }
+        code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    </style>
 </head>
 <body>
 
@@ -34,72 +31,86 @@
 
 <h2>1. Introduction</h2>
 <p>
-Shared List respects user privacy. This Privacy Policy explains how data is handled when using the app.
+    Shared List respects user privacy. This Privacy Policy explains how data is handled when using the app.
+</p>
+<p>
+    Shared List is an open source project. Source code is available on GitHub:
+    <a href="https://github.com/tekware-it/sharedlist" target="_blank" rel="noopener noreferrer">
+        https://github.com/tekware-it/sharedlist
+    </a>
 </p>
 
 <h2>2. Data We Collect</h2>
 <p>
-The app does not collect personal information such as name, email address, or advertising identifiers.
+    The app does not collect personal information such as name, email address, or advertising identifiers.
 </p>
 <ul>
-  <li>User-generated content (e.g. shared lists)</li>
-  <li>Push notification tokens required to deliver notifications</li>
+    <li><strong>User-generated content</strong> (e.g. shared lists)</li>
+    <li><strong>Push notification tokens</strong> required to deliver notifications (APNs on iOS, FCM on Android)</li>
+    <li><strong>Installation identifier</strong> used by the notification service on Android to route messages (used only for delivery, not for tracking)</li>
 </ul>
 
 <h2>3. Data Security</h2>
 <p>
-User-generated content is encrypted on the user’s device before being transmitted.
-The backend only processes and stores encrypted data and cannot access the plaintext.
+    User-generated content is encrypted on the user’s device before being transmitted.
+    The backend only processes and stores encrypted data and cannot access the plaintext.
 </p>
 <p>
-All network communication uses secure connections (HTTPS).
+    All network communication uses secure connections (HTTPS).
 </p>
 
 <h2>4. How Data Is Used</h2>
 <ul>
-  <li>Provide core app functionality</li>
-  <li>Synchronize shared lists between users</li>
-  <li>Deliver push notifications related to list updates</li>
+    <li>Provide core app functionality</li>
+    <li>Synchronize shared lists between users</li>
+    <li>Deliver push notifications related to list updates</li>
 </ul>
 
 <h2>5. Push Notifications</h2>
 <p>
-Push notifications are used only to notify users about shared list updates.
-They do not contain sensitive or encrypted user content and are not used for marketing or tracking.
+    Push notifications are used only to notify users about shared list updates.
+    They do not contain sensitive or encrypted user content and are not used for marketing or tracking.
+</p>
+<p>
+    <strong>iOS:</strong> notifications are delivered via Apple Push Notification service (APNs).
+</p>
+<p>
+    <strong>Android:</strong> notifications are delivered via Firebase Cloud Messaging (FCM) to reach devices reliably.
+    FCM uses an installation identifier and device token to route messages; this is used only for notification delivery.
 </p>
 
 <h2>6. Data Sharing</h2>
 <p>
-Data is not sold or shared with third parties for advertising or tracking purposes.
-Encrypted data is processed only by backend infrastructure required to operate the service.
+    Data is not sold or shared with third parties for advertising or tracking purposes.
+    Encrypted data is processed only by backend infrastructure required to operate the service.
 </p>
 
 <h2>7. Donations</h2>
 <p>
-The app includes optional links to external donation platforms (e.g. Buy Me a Coffee).
-Donations are voluntary and do not unlock features or content within the app.
+    The app includes optional links to external donation platforms (e.g. Buy Me a Coffee).
+    Donations are voluntary and do not unlock features or content within the app.
 </p>
 
 <h2>8. Data Retention</h2>
 <p>
-Encrypted user-generated content is stored only as long as necessary to provide the service and can be removed upon request.
+    Encrypted user-generated content is stored only as long as necessary to provide the service and can be removed upon request.
+    Push tokens may be stored to enable notifications and can be removed upon request.
 </p>
 
 <h2>9. Your Rights</h2>
 <p>
-You may request deletion of your data by contacting support.
+    You may request deletion of your data by contacting support.
 </p>
 
 <h2>10. Contact</h2>
 <p>
-For privacy-related questions, contact:<br />
-<strong>tekware.info@gmail.com</strong>
+    For privacy-related questions, contact:<br />
+    <strong>tekware.info@gmail.com</strong>
 </p>
 
 <footer>
-   2026 Shared List
+    Shared List – Open source (MIT License)
 </footer>
 
 </body>
 </html>
-
