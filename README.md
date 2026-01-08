@@ -95,3 +95,8 @@ Optional flags:
 - `--no-tag` to skip creating `vX.Y.Z`
 - `--build 42` to set the iOS build number explicitly
 - `--code 10203` to set the Android `versionCode` explicitly
+
+Changelog entries are generated from commits that follow these prefixes:
+`feat`, `fix`, `perf`, `refactor`, `chore`, `docs`, `test`, `build`, `ci`.
+The script creates an annotated git tag (`git tag -a`) using the same release
+notes that go into `CHANGELOG.md`.

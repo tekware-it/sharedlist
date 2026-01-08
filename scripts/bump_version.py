@@ -8,6 +8,17 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+ALLOWED_PREFIXES = (
+    "feat",
+    "fix",
+    "perf",
+    "refactor",
+    "chore",
+    "docs",
+    "test",
+    "build",
+    "ci",
+)
 
 
 def read_text(path: Path) -> str:
@@ -87,7 +98,16 @@ def get_last_tag() -> str | None:
         return None
 
 
-def build_changelog(version: str) -> str:
+def filter_commit_lines(lines: list[str]) -> list[str]:
+    pattern = re.compile(
+        r"^(?:"
+        + "|".join(re.escape(prefix) for prefix in ALLOWED_PREFIXES)
+        + r")(?:\([^)]+\))?:\s+.+"
+    )
+    return [line for line in lines if pattern.match(line)]
+
+
+def build_changelog(version: str) -> tuple[str, str]:
     last_tag = get_last_tag()
     if last_tag:
         log_range = f"{last_tag}..HEAD"
@@ -95,9 +115,15 @@ def build_changelog(version: str) -> str:
     else:
         raw = run(["git", "log", "--pretty=format:%s (%h)"])
 
-    entries = [f"- {line}" for line in raw.splitlines() if line.strip()]
+    filtered = filter_commit_lines([line for line in raw.splitlines() if line.strip()])
+    entries = [f"- {line}" for line in filtered]
+    if not entries:
+        entries = ["- (no user-facing changes)"]
+
     heading = f"## v{version} - {date.today().isoformat()}"
-    return "\n".join([heading, ""] + entries + [""])
+    changelog = "\n".join([heading, ""] + entries + [""])
+    release_notes = "\n".join([f"Release v{version}", ""] + entries + [""])
+    return changelog, release_notes
 
 
 def update_changelog(path: Path, content: str) -> None:
@@ -109,9 +135,9 @@ def update_changelog(path: Path, content: str) -> None:
     write_text(path, updated)
 
 
-def create_git_tag(version: str) -> None:
+def create_git_tag(version: str, release_notes: str) -> None:
     tag_name = f"v{version}"
-    run(["git", "tag", tag_name])
+    run(["git", "tag", "-a", tag_name, "-m", release_notes])
 
 
 def create_git_commit(version: str) -> None:
@@ -177,15 +203,19 @@ def main() -> int:
     update_android_build_gradle(gradle, version, version_code)
     update_ios_pbxproj(pbxproj, version, build_number)
 
+    release_notes = ""
     if not args.no_changelog:
         changelog = ROOT / "CHANGELOG.md"
-        update_changelog(changelog, build_changelog(version))
+        changelog_text, release_notes = build_changelog(version)
+        update_changelog(changelog, changelog_text)
 
     if not args.no_commit:
         create_git_commit(version)
 
     if not args.no_tag:
-        create_git_tag(version)
+        if not release_notes:
+            _, release_notes = build_changelog(version)
+        create_git_tag(version, release_notes)
 
     print(f"Updated version: {version}")
     print(f"Android versionCode: {version_code}")
