@@ -2,6 +2,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as RNLocalize from "react-native-localize";
 import { useTranslation } from "react-i18next";
+import DeviceInfo from "react-native-device-info";
 
 import {
   View,
@@ -46,8 +47,6 @@ import { detectSystemLanguage, needsRtlRestart } from "../i18n";
 type Props = {
   onClose: () => void;
 };
-
-const APP_VERSION = "0.1.0"; // allinea a package.json se vuoi
 
 type ActiveDialog = "none" | "server" | "interval";
 type BackendTestStatus = "idle" | "testing" | "online" | "offline";
@@ -293,11 +292,14 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
   }
 
   function handleInfo() {
+    const version = DeviceInfo.getVersion();
+    const build = DeviceInfo.getBuildNumber();
+    const versionLabel = build ? `${version} (${build})` : version;
     Alert.alert(
       t("settings.info"),
       t("settings.info_body", {
         appName: t("common.app_name"),
-        version: APP_VERSION,
+        version: versionLabel,
         backendUrl: DEFAULT_BACKEND_URL,
       })
     );

@@ -78,3 +78,20 @@ The backend will be available at `http://localhost:8000`.
 - `DELETE /v1/lists/{list_id}/items/{item_id}` - delete item
 
 See `backend/README.md` and `backend/tests/test_api.py` for more details.
+
+## Versioning and releases
+
+Use the helper script to sync versions across the app, update the changelog,
+create a commit, and tag the release:
+
+```bash
+python3 scripts/bump_version.py --version 1.2.3
+```
+
+Optional flags:
+
+- `--no-changelog` to skip `CHANGELOG.md`
+- `--no-commit` to skip the version bump commit
+- `--no-tag` to skip creating `vX.Y.Z`
+- `--build 42` to set the iOS build number explicitly
+- `--code 10203` to set the Android `versionCode` explicitly
