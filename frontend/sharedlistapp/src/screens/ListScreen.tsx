@@ -779,21 +779,29 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       },
     };
 
+    setItems((prev) => {
+      const updatedList = prev.map((it) =>
+        it.localId === target.localId
+          ? { ...it, plaintext: updatedPlain }
+          : it
+      );
+
+      const plainForStore: StoredItemPlain[] = updatedList
+        .filter((it) => it.item_id != null && it.plaintext)
+        .map((it) => ({
+          itemId: it.item_id!,
+          label: it.plaintext!.label,
+          flags: it.plaintext!.flags,
+        }));
+
+      saveStoredItems(listId, plainForStore).catch((err) =>
+        console.warn("saveStoredItems after flag update failed", err)
+      );
+
+      return updatedList;
+    });
+
     if (removedFromServer) {
-      setItems((prev) => {
-        const updatedList = prev.map((it) =>
-          it.localId === target.localId
-            ? { ...it, plaintext: updatedPlain }
-            : it
-        );
-
-        saveStoredItems(listId, buildStoredItemsFromViews(updatedList)).catch(
-          (err) =>
-            console.warn("saveStoredItems after local flag update failed", err)
-        );
-
-        return updatedList;
-      });
       return;
     }
 
@@ -801,19 +809,13 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
 
     // Caso 1: item creato offline e non ancora sul server
     if (target.pendingCreate && target.pendingOpId) {
-      setItems((prev) =>
-        prev.map((it) =>
-          it.localId === target.localId
-            ? { ...it, plaintext: updatedPlain }
-            : it
-        )
-      );
-
-      await updateCreateItemOpCipher({
+      updateCreateItemOpCipher({
         opId: target.pendingOpId,
         ciphertextB64,
         nonceB64,
-      });
+      }).catch((err) =>
+        console.warn("updateCreateItemOpCipher failed", err)
+      );
 
       return;
     }
@@ -821,86 +823,65 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     // Caso 2: item già sul server
     if (target.item_id == null) return;
 
-    try {
-      const clientId = await getClientId();
-      const updated = await apiUpdateItem({
-        listId,
-        itemId: target.item_id,
-        ciphertext_b64: ciphertextB64,
-        nonce_b64: nonceB64,
-        clientId,
-      });
+    (async () => {
+      try {
+        const clientId = await getClientId();
+        const updated = await apiUpdateItem({
+          listId,
+          itemId: target.item_id!,
+          ciphertext_b64: ciphertextB64,
+          nonce_b64: nonceB64,
+          clientId,
+        });
 
-      setItems((prev) => {
-        const updatedList = prev.map((it) =>
-          it.localId === target.localId
-            ? { ...it, plaintext: updatedPlain }
-            : it
-        );
+        await updateLastSeenRev(listId, updated.rev);
+      } catch (e: any) {
+        console.warn("Update item failed, queueing for sync", e?.message ?? e);
 
-        const plainForStore: StoredItemPlain[] = updatedList
-          .filter((it) => it.item_id != null && it.plaintext)
-          .map((it) => ({
-            itemId: it.item_id!,
-            label: it.plaintext!.label,
-            flags: it.plaintext!.flags,
-          }));
+        const msg = String(e?.message ?? "");
+        // Errori HTTP veri (es. 404) -> non trattiamo come offline
+        if (msg.startsWith("HTTP ")) {
+          Alert.alert(t("common.error_title"), msg);
+          return;
+        }
 
-        saveStoredItems(listId, plainForStore).catch((err) =>
-          console.warn("saveStoredItems after flag update failed", err)
-        );
+        // offline: mettiamo in coda un update_item e marchiamo ⏳
+        const op = await enqueueUpdateItem({
+          listId,
+          itemId: target.item_id!,
+          ciphertextB64,
+          nonceB64,
+        });
 
-        return updatedList;
-      });
+        setItems((prev) => {
+          const updatedList = prev.map((it) =>
+            it.localId === target.localId
+              ? { ...it, pendingUpdate: true, pendingOpId: op.id }
+              : it
+          );
 
-      await updateLastSeenRev(listId, updated.rev);
-    } catch (e: any) {
-      console.warn("Update item failed, queueing for sync", e?.message ?? e);
+          const plainForStore: StoredItemPlain[] = updatedList
+            .filter((it) => it.item_id != null && it.plaintext)
+            .map((it) => ({
+              itemId: it.item_id!,
+              label: it.plaintext!.label,
+              flags: it.plaintext!.flags,
+            }));
 
-      const msg = String(e?.message ?? "");
-      // Errori HTTP veri (es. 404) -> non trattiamo come offline
-      if (msg.startsWith("HTTP ")) {
-        Alert.alert(t("common.error_title"), msg);
-        return;
+          saveStoredItems(listId, plainForStore).catch((err) =>
+            console.warn("saveStoredItems after offline flag update failed", err)
+          );
+
+          return updatedList;
+        });
+
+        if (Platform.OS === "android") {
+          ToastAndroid.show(t("list.offline_item_updated"), ToastAndroid.SHORT);
+        } else {
+          Alert.alert(t("common.offline"), t("list.offline_item_updated"));
+        }
       }
-
-      // offline: mettiamo in coda un update_item e marchiamo ⏳
-      const op = await enqueueUpdateItem({
-        listId,
-        itemId: target.item_id,
-        ciphertextB64,
-        nonceB64,
-      });
-
-      setItems((prev) => {
-        const updatedList = prev.map((it) =>
-          it.localId === target.localId
-            ? {
-                ...it,
-                plaintext: updatedPlain,
-                pendingUpdate: true,
-                pendingOpId: op.id,
-              }
-            : it
-        );
-
-        const plainForStore: StoredItemPlain[] = updatedList
-          .filter((it) => it.item_id != null && it.plaintext)
-          .map((it) => ({
-            itemId: it.item_id!,
-            label: it.plaintext!.label,
-            flags: it.plaintext!.flags,
-          }));
-
-        saveStoredItems(listId, plainForStore).catch((err) =>
-          console.warn("saveStoredItems after offline flag update failed", err)
-        );
-
-        return updatedList;
-      });
-
-      Alert.alert(t("common.offline"), t("list.offline_item_updated"));
-    }
+    })();
   }
 
   //
