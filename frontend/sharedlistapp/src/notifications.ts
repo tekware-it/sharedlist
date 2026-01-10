@@ -5,7 +5,9 @@ import PushNotification from "react-native-push-notification";
 import i18n from "./i18n";
 
 const CHANNEL_ID = "sharedlist-changes";
-const NOTIFICATION_ID = 1001;
+const NOTIFICATION_ID_ANDROID = 1001;
+const NOTIFICATION_ID_IOS = "1001";
+const NOTIFICATION_TAG = "sharedlist-updates";
 
 let initialized = false;
 
@@ -84,10 +86,12 @@ export function notifyListsChanged(count: number) {
       : i18n.t("notifications.many_updated", { count });
 
   PushNotification.localNotification({
-    id: NOTIFICATION_ID,
+    id: Platform.OS === "android" ? NOTIFICATION_ID_ANDROID : NOTIFICATION_ID_IOS,
+    tag: NOTIFICATION_TAG,
     channelId: CHANNEL_ID,
     title: i18n.t("common.app_name"),
     message,
+    userInfo: { id: NOTIFICATION_TAG },
     playSound: true,
     soundName: "default",
     vibrate: true,
