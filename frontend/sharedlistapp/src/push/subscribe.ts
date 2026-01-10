@@ -26,6 +26,15 @@ export async function subscribeToListPush(listId: string) {
       }
       const clientId = await getClientId();
       const baseUrl = await getBaseUrl();
+      console.log(
+        "[Push] iOS subscribe request",
+        "listId=",
+        listId,
+        "baseUrl=",
+        baseUrl,
+        "tokenPrefix=",
+        apnsToken.slice(0, 8)
+      );
 
       const res = await fetch(
         `${baseUrl}/v1/lists/${encodeURIComponent(
@@ -68,6 +77,15 @@ export async function unsubscribeFromListPush(listId: string) {
       if (!apnsToken) return;
       const clientId = await getClientId();
       const baseUrl = await getBaseUrl();
+      console.log(
+        "[Push] iOS unsubscribe request",
+        "listId=",
+        listId,
+        "baseUrl=",
+        baseUrl,
+        "tokenPrefix=",
+        apnsToken.slice(0, 8)
+      );
 
       const res = await fetch(
         `${baseUrl}/v1/lists/${encodeURIComponent(

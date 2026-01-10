@@ -68,11 +68,23 @@ async def send_list_update_apns(
     print("APNs disabled: missing config")
     return
 
-  if not device_tokens:
+  tokens = list(device_tokens)
+  if not tokens:
     return
 
   token = _get_apns_jwt()
   url_base = _apns_base_url()
+  print(
+    "[APNs Push]",
+    "list_id=",
+    list_id,
+    "latest_rev=",
+    latest_rev,
+    "targets=",
+    len(tokens),
+    "sandbox=",
+    APNS_USE_SANDBOX,
+  )
 
   payload = {
     "aps": {
@@ -93,7 +105,7 @@ async def send_list_update_apns(
   }
 
   async with httpx.AsyncClient(http2=True, timeout=5.0) as client:
-    for dev_token in device_tokens:
+    for dev_token in tokens:
       url = f"{url_base}/3/device/{dev_token}"
       r = await client.post(url, headers=headers, content=json.dumps(payload))
       if r.status_code >= 400:

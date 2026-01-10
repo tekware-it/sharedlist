@@ -39,6 +39,7 @@ async def send_list_update_fcm(list_id: str, latest_rev: int | None = None) -> N
     return
 
   topic = list_topic(list_id)
+  print("[Android Push] topic=", topic, "list_id=", list_id, "latest_rev=", latest_rev)
   access_token = _get_access_token()
 
   data = {
@@ -68,4 +69,3 @@ async def send_list_update_fcm(list_id: str, latest_rev: int | None = None) -> N
     r = await client.post(url, headers=headers, json=msg)
     if r.status_code >= 400:
       print("FCM send error:", r.status_code, r.text)
-
