@@ -16,7 +16,7 @@ import {
   Modal,
   TextInput,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 import {
   loadStoredItems,
@@ -249,6 +249,7 @@ export const MyListsScreen: React.FC<Props> = ({
 
   const [lists, setLists] = useState<ListWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [textScale, setTextScale] = useState(1);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(
     syncEvents.getHealth()
   );
@@ -262,7 +263,27 @@ export const MyListsScreen: React.FC<Props> = ({
     return list.name ?? t("list.offline_title");
   };
 
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const styles = useMemo(() => makeStyles(colors, textScale), [colors, textScale]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      loadSettings()
+        .then((s) => {
+          if (active) {
+            setTextScale(s.textScale ?? 1);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setTextScale(1);
+          }
+        });
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   useLayoutEffect(() => {
     if (Platform.OS !== "ios") return;
@@ -949,7 +970,7 @@ export const MyListsScreen: React.FC<Props> = ({
   );
 };
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, textScale: number) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -1017,7 +1038,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
 
     headerAddIcon: {
-      fontSize: 22,
+      fontSize: 22 * textScale,
       color: colors.text,
     },
 
@@ -1031,13 +1052,13 @@ const makeStyles = (colors: ThemeColors) =>
       borderColor: colors.border,
     },
     listRowText: { flex: 1 },
-    listName: { fontSize: 16, fontWeight: "500", color: colors.text },
+    listName: { fontSize: 16 * textScale, fontWeight: "500", color: colors.text },
     listId: { fontSize: 10, color: colors.mutedText },
 
     badge: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
+      width: 10 * textScale,
+      height: 10 * textScale,
+      borderRadius: 5 * textScale,
       backgroundColor: colors.danger,
       marginRight: 8,
     },
@@ -1048,7 +1069,7 @@ const makeStyles = (colors: ThemeColors) =>
       marginRight: 4,
     },
     pendingIcon: {
-      fontSize: 16,
+      fontSize: 16 * textScale,
       color: colors.warning,
     },
 
@@ -1057,7 +1078,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: 4,
     },
     trashText: {
-      fontSize: 18,
+      fontSize: 18 * textScale,
       color: colors.text,
     },
 
@@ -1067,7 +1088,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: 4,
     },
     settingsIcon: {
-      fontSize: 20,
+      fontSize: 20 * textScale,
       color: colors.text,
     },
     navHeaderRight: {
@@ -1080,7 +1101,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: 4,
     },
     navHeaderIcon: {
-      fontSize: 20,
+      fontSize: 20 * textScale,
       color: colors.text,
     },
 

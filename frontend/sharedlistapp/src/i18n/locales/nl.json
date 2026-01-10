@@ -75,6 +75,8 @@
   "settings.language": "Taal",
   "settings.language_desc": "Kies de app-taal.",
   "settings.theme": "Thema",
+  "settings.text_size": "Text size",
+  "settings.save_text_size_failed": "Couldn't save the text size.",
   "settings.theme_desc": "Kies licht, donker of systeem.",
   "settings.notifications_dialog_title": "Meldingen",
   "settings.enable_notifications": "Meldingen inschakelen",

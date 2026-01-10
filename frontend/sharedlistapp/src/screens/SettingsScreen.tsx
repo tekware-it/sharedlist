@@ -67,6 +67,7 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
   const [editHealthSec, setEditHealthSec] = useState("");
   const [langDialogVisible, setLangDialogVisible] = useState(false);
   const [themeDialogVisible, setThemeDialogVisible] = useState(false);
+  const [textScaleDialogVisible, setTextScaleDialogVisible] = useState(false);
   const [supportDialogVisible, setSupportDialogVisible] = useState(false);
 
   const [backendTestStatus, setBackendTestStatus] =
@@ -378,6 +379,10 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
     }
   }
 
+  function textScaleLabel(scale: number): string {
+    return `x${scale}`;
+  }
+
 
     async function changeLanguage(lang: LanguageOption) {
     try {
@@ -468,6 +473,34 @@ function renderLanguageOption(
     );
   }
 
+  async function changeTextScale(scale: number) {
+    try {
+      await saveSettingsAndUpdate({ textScale: scale });
+      setTextScaleDialogVisible(false);
+    } catch (e) {
+      console.error(e);
+      Alert.alert(t("common.error_title"), t("settings.save_text_size_failed"));
+    }
+  }
+
+  function renderTextScaleOption(value: number) {
+    const selected = settings?.textScale === value;
+    return (
+      <TouchableOpacity
+        key={value}
+        style={styles.modalRow}
+        onPress={() => changeTextScale(value)}
+      >
+        <View style={styles.modalRowText}>
+          <Text style={styles.rowLabel}>{textScaleLabel(value)}</Text>
+        </View>
+        <View style={styles.langRadioOuter}>
+          {selected ? <View style={styles.langRadioInner} /> : null}
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
   async function applySettingsAndMaybeResub(patch: Partial<Settings>) {
       const next = await saveSettingsAndUpdate(patch);
 
@@ -488,6 +521,8 @@ function renderLanguageOption(
 
   const openThemeDialog = () => setThemeDialogVisible(true);
   const closeThemeDialog = () => setThemeDialogVisible(false);
+  const openTextScaleDialog = () => setTextScaleDialogVisible(true);
+  const closeTextScaleDialog = () => setTextScaleDialogVisible(false);
   const closeSupportDialog = () => setSupportDialogVisible(false);
 
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -568,6 +603,15 @@ function renderLanguageOption(
               {themeLabel(
                 (settings.themeMode ?? "system") as ThemeMode
               )}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={openTextScaleDialog}>
+          <View style={styles.row}>
+            <Text style={styles.rowTitle}>{t("settings.text_size")}</Text>
+            <Text style={styles.rowValue}>
+              {textScaleLabel(settings.textScale ?? 1)}
             </Text>
           </View>
         </TouchableOpacity>
@@ -696,6 +740,36 @@ function renderLanguageOption(
               <TouchableOpacity
                 style={styles.modalButton}
                 onPress={closeThemeDialog}
+              >
+                <Text style={styles.modalButtonText}>{t("common.close")}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Dialog Dimensione testo */}
+      <Modal
+        transparent
+        visible={textScaleDialogVisible}
+        animationType="fade"
+        presentationStyle="overFullScreen"
+        supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
+        onRequestClose={closeTextScaleDialog}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t("settings.text_size")}</Text>
+
+            {renderTextScaleOption(1)}
+            {renderTextScaleOption(1.5)}
+            {renderTextScaleOption(2)}
+            {renderTextScaleOption(2.5)}
+
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={closeTextScaleDialog}
               >
                 <Text style={styles.modalButtonText}>{t("common.close")}</Text>
               </TouchableOpacity>

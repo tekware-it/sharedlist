@@ -16,7 +16,7 @@ import {
   ToastAndroid,
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 import {
   apiGetList,
@@ -50,6 +50,7 @@ import {
   saveStoredItems,
   type StoredItemPlain,
 } from "../storage/itemsStore";
+import { loadSettings } from "../storage/settingsStore";
 import Clipboard from "@react-native-clipboard/clipboard";
 import { syncEvents } from "../events/syncEvents";
 import { useTheme, type ThemeColors } from "../theme";
@@ -106,7 +107,28 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
 
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [textScale, setTextScale] = useState(1);
+  const styles = useMemo(() => makeStyles(colors, textScale), [colors, textScale]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      let active = true;
+      loadSettings()
+        .then((s) => {
+          if (active) {
+            setTextScale(s.textScale ?? 1);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setTextScale(1);
+          }
+        });
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   useLayoutEffect(() => {
     if (Platform.OS !== "ios") return;
@@ -1208,7 +1230,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   );
 };
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, textScale: number) =>
   StyleSheet.create({
     flex: { flex: 1, backgroundColor: colors.background },
     container: {
@@ -1223,7 +1245,7 @@ const makeStyles = (colors: ThemeColors) =>
       justifyContent: "center",
       backgroundColor: colors.background,
     },
-    title: { fontSize: 20, fontWeight: "700", marginRight: 8, color: colors.text },
+    title: { fontSize: 20 * textScale, fontWeight: "700", marginRight: 8, color: colors.text },
     headerRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -1272,7 +1294,7 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
     },
     itemLabel: {
-      fontSize: 16,
+      fontSize: 16 * textScale,
       color: colors.text,
     },
     itemLabelChecked: {
@@ -1308,7 +1330,7 @@ const makeStyles = (colors: ThemeColors) =>
       borderColor: colors.primary,
     },
     flagChipText: {
-      fontSize: 12,
+      fontSize: 12 * textScale,
       color: colors.text,
     },
 
@@ -1321,7 +1343,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: 4,
     },
     headerIconText: {
-      fontSize: 20,
+      fontSize: 20 * textScale,
       color: colors.text,
     },
     navHeaderRight: {
@@ -1334,7 +1356,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: 4,
     },
     navHeaderIcon: {
-      fontSize: 20,
+      fontSize: 20 * textScale,
       color: colors.text,
     },
 
@@ -1343,7 +1365,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: 4,
     },
     pendingItemIcon: {
-      fontSize: 16,
+      fontSize: 16 * textScale,
       color: colors.warning,
     },
 
@@ -1352,7 +1374,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: 4,
     },
     itemTrashText: {
-      fontSize: 18,
+      fontSize: 18 * textScale,
       color: colors.text,
     },
 

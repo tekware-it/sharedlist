@@ -75,6 +75,8 @@
   "settings.language": "Γλώσσα",
   "settings.language_desc": "Επιλέξτε τη γλώσσα της εφαρμογής.",
   "settings.theme": "Θέμα",
+  "settings.text_size": "Text size",
+  "settings.save_text_size_failed": "Couldn't save the text size.",
   "settings.theme_desc": "Επιλέξτε φωτεινό, σκοτεινό ή σύστημα.",
   "settings.notifications_dialog_title": "Ειδοποιήσεις",
   "settings.enable_notifications": "Ενεργοποίηση ειδοποιήσεων",

@@ -75,6 +75,8 @@
   "settings.language": "Språk",
   "settings.language_desc": "Välj appens språk.",
   "settings.theme": "Tema",
+  "settings.text_size": "Text size",
+  "settings.save_text_size_failed": "Couldn't save the text size.",
   "settings.theme_desc": "Välj ljust, mörkt eller system.",
   "settings.notifications_dialog_title": "Notiser",
   "settings.enable_notifications": "Aktivera notiser",

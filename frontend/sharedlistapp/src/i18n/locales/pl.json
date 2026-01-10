@@ -75,6 +75,8 @@
   "settings.language": "Język",
   "settings.language_desc": "Wybierz język aplikacji.",
   "settings.theme": "Motyw",
+  "settings.text_size": "Text size",
+  "settings.save_text_size_failed": "Couldn't save the text size.",
   "settings.theme_desc": "Wybierz jasny, ciemny lub systemowy.",
   "settings.notifications_dialog_title": "Powiadomienia",
   "settings.enable_notifications": "Włącz powiadomienia",

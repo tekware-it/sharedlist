@@ -29,6 +29,7 @@ export type AppSettings = {
   notificationsEnabled: boolean;
   backgroundSyncEnabled: boolean;
   notificationsOnlyAlertOnce: boolean;
+  textScale: number;
   language: LanguageOption;
   themeMode: ThemeMode;
 };
@@ -49,6 +50,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   notificationsEnabled: true,
   backgroundSyncEnabled: true,
   notificationsOnlyAlertOnce: false,
+  textScale: 1,
   language: "system",
   themeMode: "system",
 };
@@ -71,6 +73,7 @@ export async function loadSettings(): Promise<AppSettings> {
       notificationsOnlyAlertOnce:
         parsed.notificationsOnlyAlertOnce ??
         DEFAULT_SETTINGS.notificationsOnlyAlertOnce,
+      textScale: parsed.textScale ?? DEFAULT_SETTINGS.textScale,
       language: parsed.language ?? DEFAULT_SETTINGS.language,
       themeMode: parsed.themeMode ?? DEFAULT_SETTINGS.themeMode,
     };

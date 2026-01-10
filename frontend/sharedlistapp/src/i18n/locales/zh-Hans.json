@@ -75,6 +75,8 @@
   "settings.language": "语言",
   "settings.language_desc": "选择应用语言。",
   "settings.theme": "主题",
+  "settings.text_size": "Text size",
+  "settings.save_text_size_failed": "Couldn't save the text size.",
   "settings.theme_desc": "选择浅色、深色或系统。",
   "settings.notifications_dialog_title": "通知",
   "settings.enable_notifications": "启用通知",

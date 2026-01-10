@@ -75,6 +75,8 @@
   "settings.language": "Kieli",
   "settings.language_desc": "Valitse sovelluksen kieli.",
   "settings.theme": "Teema",
+  "settings.text_size": "Text size",
+  "settings.save_text_size_failed": "Couldn't save the text size.",
   "settings.theme_desc": "Valitse vaalea, tumma tai järjestelmä.",
   "settings.notifications_dialog_title": "Ilmoitukset",
   "settings.enable_notifications": "Ota ilmoitukset käyttöön",

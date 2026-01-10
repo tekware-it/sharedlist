@@ -75,6 +75,8 @@
   "settings.language": "Язык",
   "settings.language_desc": "Выберите язык приложения.",
   "settings.theme": "Тема",
+  "settings.text_size": "Text size",
+  "settings.save_text_size_failed": "Couldn't save the text size.",
   "settings.theme_desc": "Выберите светлую, темную или системную.",
   "settings.notifications_dialog_title": "Уведомления",
   "settings.enable_notifications": "Включить уведомления",

@@ -75,6 +75,8 @@
   "settings.language": "اللغة",
   "settings.language_desc": "اختر لغة التطبيق.",
   "settings.theme": "السمة",
+  "settings.text_size": "Text size",
+  "settings.save_text_size_failed": "Couldn't save the text size.",
   "settings.theme_desc": "اختر فاتح أو داكن أو النظام.",
   "settings.notifications_dialog_title": "الإشعارات",
   "settings.enable_notifications": "تفعيل الإشعارات",

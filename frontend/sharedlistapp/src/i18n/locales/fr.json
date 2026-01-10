@@ -75,6 +75,8 @@
   "settings.language": "Langue",
   "settings.language_desc": "Choisissez la langue de l'app.",
   "settings.theme": "Thème",
+  "settings.text_size": "Text size",
+  "settings.save_text_size_failed": "Couldn't save the text size.",
   "settings.theme_desc": "Choisissez clair, sombre ou système.",
   "settings.notifications_dialog_title": "Notifications",
   "settings.enable_notifications": "Activer les notifications",

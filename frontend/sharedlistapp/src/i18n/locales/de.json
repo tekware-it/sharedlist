@@ -75,6 +75,8 @@
   "settings.language": "Sprache",
   "settings.language_desc": "Wähle die App-Sprache.",
   "settings.theme": "Design",
+  "settings.text_size": "Text size",
+  "settings.save_text_size_failed": "Couldn't save the text size.",
   "settings.theme_desc": "Hell, dunkel oder System wählen.",
   "settings.notifications_dialog_title": "Benachrichtigungen",
   "settings.enable_notifications": "Benachrichtigungen aktivieren",

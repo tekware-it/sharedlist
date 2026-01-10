@@ -75,6 +75,8 @@
   "settings.language": "भाषा",
   "settings.language_desc": "ऐप की भाषा चुनें।",
   "settings.theme": "थीम",
+  "settings.text_size": "Text size",
+  "settings.save_text_size_failed": "Couldn't save the text size.",
   "settings.theme_desc": "लाइट, डार्क या सिस्टम चुनें।",
   "settings.notifications_dialog_title": "सूचनाएं",
   "settings.enable_notifications": "सूचनाएं सक्षम करें",
