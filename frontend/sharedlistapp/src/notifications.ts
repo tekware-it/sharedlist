@@ -5,7 +5,7 @@ import PushNotification from "react-native-push-notification";
 import i18n from "./i18n";
 
 const CHANNEL_ID = "sharedlist-changes";
-const NOTIFICATION_ID = 1001;
+const NOTIFICATION_ID_ANDROID = 1001;
 
 let initialized = false;
 
@@ -83,14 +83,19 @@ export function notifyListsChanged(count: number) {
       ? i18n.t("notifications.one_updated")
       : i18n.t("notifications.many_updated", { count });
 
-  PushNotification.localNotification({
-    id: NOTIFICATION_ID,
+  const payload: Record<string, any> = {
     channelId: CHANNEL_ID,
     title: i18n.t("common.app_name"),
     message,
-    playSound: true,
-    soundName: "default",
-    vibrate: true,
-    onlyAlertOnce: false,
-  });
+  };
+
+  if (Platform.OS === "android") {
+    payload.id = NOTIFICATION_ID_ANDROID;
+    payload.playSound = true;
+    payload.soundName = "default";
+    payload.vibrate = true;
+    payload.onlyAlertOnce = false;
+  }
+
+  PushNotification.localNotification(payload);
 }
