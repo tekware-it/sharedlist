@@ -1,6 +1,6 @@
 import "react-native-get-random-values";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   AppState,
@@ -27,8 +27,9 @@ import { ListScreen } from "./src/screens/ListScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
 
 import { parseSharedListUrl } from "./src/linking/sharedListLink";
-import { upsertStoredList } from "./src/storage/listsStore";
+import { loadStoredLists, upsertStoredList } from "./src/storage/listsStore";
 import { loadSettings, type ThemeMode } from "./src/storage/settingsStore";
+import { subscribeToListPush } from "./src/push/subscribe";
 import {
   startForegroundSyncWorker,
   stopForegroundSyncWorker,
@@ -56,6 +57,29 @@ export default function App() {
   const pendingLinkRef = useRef<{ listId: string; listKey: string } | null>(
     null
   );
+
+  const maybeSubscribeToListPush = useCallback(async (listId: string) => {
+    const settings = await loadSettings().catch(() => null);
+    const notificationsEnabled = settings?.notificationsEnabled ?? true;
+    const backgroundSyncEnabled = settings?.backgroundSyncEnabled ?? true;
+    if (!notificationsEnabled && !backgroundSyncEnabled) return;
+    await subscribeToListPush(listId);
+  }, []);
+
+  const ensureStoredList = useCallback(async (listId: string, listKey: string) => {
+    const stored = await loadStoredLists();
+    const existing = stored.find((l) => l.listId === listId);
+    if (!existing) {
+      await upsertStoredList({
+        listId,
+        listKey,
+        name: t("list.unnamed"),
+        lastSeenRev: null,
+        lastRemoteRev: null,
+      });
+    }
+    await maybeSubscribeToListPush(listId);
+  }, [maybeSubscribeToListPush, t]);
 
   // ---- Foreground sync worker (come prima) ----
   useEffect(() => {
@@ -114,7 +138,7 @@ export default function App() {
     const goToParsedLink = async (parsed: { listId: string; listKey: string }) => {
       // salva in storage così poi appare in "Le mie liste"
       try {
-        await upsertStoredList(parsed.listId, parsed.listKey);
+        await ensureStoredList(parsed.listId, parsed.listKey);
       } catch (e) {
         console.warn("[App] upsertStoredList failed", e);
       }
@@ -159,7 +183,7 @@ export default function App() {
       mounted = false;
       sub.remove();
     };
-  }, []);
+  }, [ensureStoredList]);
 
   const navThemeBase = scheme === "dark" ? DarkTheme : DefaultTheme;
   const navTheme = useMemo(
@@ -211,7 +235,7 @@ export default function App() {
       onCancel={() => navigationRef.goBack()}
       onCreated={async (listId, listKey) => {
       try {
-        await upsertStoredList(listId, listKey);
+        await ensureStoredList(listId, listKey);
       } catch (e) {
         console.warn("[App] upsertStoredList failed", e);
       }

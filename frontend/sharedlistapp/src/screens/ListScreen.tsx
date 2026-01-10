@@ -310,6 +310,14 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           metaRes.meta_nonce_b64
         );
         setMeta(metaPlain);
+        if (metaPlain?.name) {
+          await upsertStoredList({
+            listId,
+            listKey,
+            name: metaPlain.name,
+            removedFromServer: false,
+          } as any);
+        }
         setRemovedFromServer(false);
 
         const itemsRes = await apiFetchItems({ listId });

@@ -395,7 +395,8 @@ export const MyListsScreen: React.FC<Props> = ({
         let newL: StoredList = { ...l };
 
         // 1) Aggiorna nome se placeholder / vuoto
-        if (!newL.name || newL.name === PLACEHOLDER_NAME) {
+        const unnamedLabel = t("list.unnamed");
+        if (!newL.name || newL.name === PLACEHOLDER_NAME || newL.name === unnamedLabel) {
           try {
             const metaRes = await apiGetList(newL.listId);
             const metaPlain = decryptJson<ListMeta>(
