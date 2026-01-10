@@ -36,3 +36,5 @@ android/local.properties
 frontend/sharedlistapp/ios/Podfile.lock
 frontend/sharedlistapp/package-lock.json
 frontend/sharedlistapp/package-lock.json
+shared-list-cryptography-declaration.txt
+frontend/sharedlistapp/package-lock.json
