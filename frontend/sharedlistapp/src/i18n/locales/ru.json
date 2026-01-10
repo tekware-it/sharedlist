@@ -79,6 +79,8 @@
   "settings.notifications_dialog_title": "Уведомления",
   "settings.enable_notifications": "Включить уведомления",
   "settings.enable_notifications_help": "Показывать push-уведомления при изменении общего списка.",
+  "settings.only_alert_once": "Alert only once",
+  "settings.only_alert_once_help": "Play sound only for the first update notification.",
   "settings.enable_bg_sync": "Обновлять списки в фоне",
   "settings.enable_bg_sync_help": "Синхронизирует списки даже при закрытом приложении. Если отключить оба параметра, обновления будут только при открытии приложения.",
   "settings.language_dialog_title": "Язык",

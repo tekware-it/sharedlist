@@ -79,6 +79,8 @@
   "settings.notifications_dialog_title": "Ilmoitukset",
   "settings.enable_notifications": "Ota ilmoitukset käyttöön",
   "settings.enable_notifications_help": "Näytä push-ilmoitukset, kun jaettu lista muuttuu.",
+  "settings.only_alert_once": "Alert only once",
+  "settings.only_alert_once_help": "Play sound only for the first update notification.",
   "settings.enable_bg_sync": "Päivitä listat taustalla",
   "settings.enable_bg_sync_help": "Synkronoi listat myös sovelluksen ollessa suljettuna. Jos molemmat asetukset ovat pois päältä, päivitykset tapahtuvat vain sovellusta avattaessa.",
   "settings.language_dialog_title": "Kieli",

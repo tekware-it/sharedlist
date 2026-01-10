@@ -79,6 +79,8 @@
   "settings.notifications_dialog_title": "Meldingen",
   "settings.enable_notifications": "Meldingen inschakelen",
   "settings.enable_notifications_help": "Toon pushmeldingen wanneer een gedeelde lijst verandert.",
+  "settings.only_alert_once": "Alert only once",
+  "settings.only_alert_once_help": "Play sound only for the first update notification.",
   "settings.enable_bg_sync": "Lijsten op de achtergrond bijwerken",
   "settings.enable_bg_sync_help": "Synchroniseert lijsten ook als de app is gesloten. Als je beide opties uitschakelt, gebeuren updates alleen wanneer je de app opent.",
   "settings.language_dialog_title": "Taal",

@@ -79,6 +79,8 @@
   "settings.notifications_dialog_title": "Notifikationer",
   "settings.enable_notifications": "Aktiver notifikationer",
   "settings.enable_notifications_help": "Vis pushnotifikationer når en delt liste ændres.",
+  "settings.only_alert_once": "Alert only once",
+  "settings.only_alert_once_help": "Play sound only for the first update notification.",
   "settings.enable_bg_sync": "Opdater lister i baggrunden",
   "settings.enable_bg_sync_help": "Synkroniserer lister selv når appen er lukket. Hvis begge muligheder slås fra, sker opdateringer kun når appen åbnes.",
   "settings.language_dialog_title": "Sprog",

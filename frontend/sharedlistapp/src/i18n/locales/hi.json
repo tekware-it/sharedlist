@@ -79,6 +79,8 @@
   "settings.notifications_dialog_title": "सूचनाएं",
   "settings.enable_notifications": "सूचनाएं सक्षम करें",
   "settings.enable_notifications_help": "जब साझा सूची बदले तो पुश सूचनाएं दिखाएं।",
+  "settings.only_alert_once": "Alert only once",
+  "settings.only_alert_once_help": "Play sound only for the first update notification.",
   "settings.enable_bg_sync": "बैकग्राउंड में सूचियां अपडेट करें",
   "settings.enable_bg_sync_help": "ऐप बंद होने पर भी सूचियां सिंक रहती हैं। दोनों विकल्प बंद करने पर अपडेट केवल ऐप खोलने पर होंगे।",
   "settings.language_dialog_title": "भाषा",

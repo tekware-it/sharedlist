@@ -79,6 +79,8 @@
   "settings.notifications_dialog_title": "Benachrichtigungen",
   "settings.enable_notifications": "Benachrichtigungen aktivieren",
   "settings.enable_notifications_help": "Push-Benachrichtigungen anzeigen, wenn eine gemeinsame Liste geändert wird.",
+  "settings.only_alert_once": "Alert only once",
+  "settings.only_alert_once_help": "Play sound only for the first update notification.",
   "settings.enable_bg_sync": "Listen im Hintergrund aktualisieren",
   "settings.enable_bg_sync_help": "Synchronisiert Listen auch wenn die App geschlossen ist. Wenn beide Optionen deaktiviert sind, erfolgen Updates nur beim Öffnen der App.",
   "settings.language_dialog_title": "Sprache",

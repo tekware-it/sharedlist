@@ -79,6 +79,8 @@
   "settings.notifications_dialog_title": "Notiser",
   "settings.enable_notifications": "Aktivera notiser",
   "settings.enable_notifications_help": "Visa pushnotiser när en delad lista ändras.",
+  "settings.only_alert_once": "Alert only once",
+  "settings.only_alert_once_help": "Play sound only for the first update notification.",
   "settings.enable_bg_sync": "Uppdatera listor i bakgrunden",
   "settings.enable_bg_sync_help": "Synkar listor även när appen är stängd. Om du inaktiverar båda alternativen sker uppdateringar bara när du öppnar appen.",
   "settings.language_dialog_title": "Språk",

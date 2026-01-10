@@ -79,6 +79,8 @@
   "settings.notifications_dialog_title": "Notificaciones",
   "settings.enable_notifications": "Activar notificaciones",
   "settings.enable_notifications_help": "Mostrar notificaciones push cuando cambia una lista compartida.",
+  "settings.only_alert_once": "Alert only once",
+  "settings.only_alert_once_help": "Play sound only for the first update notification.",
   "settings.enable_bg_sync": "Actualizar en segundo plano",
   "settings.enable_bg_sync_help": "Sincroniza las listas incluso cuando la app está cerrada. Si desactivas ambas opciones, las actualizaciones solo ocurren al abrir la app.",
   "settings.language_dialog_title": "Idioma",

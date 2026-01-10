@@ -79,6 +79,8 @@
   "settings.notifications_dialog_title": "Ειδοποιήσεις",
   "settings.enable_notifications": "Ενεργοποίηση ειδοποιήσεων",
   "settings.enable_notifications_help": "Εμφάνιση ειδοποιήσεων όταν αλλάζει μια κοινόχρηστη λίστα.",
+  "settings.only_alert_once": "Alert only once",
+  "settings.only_alert_once_help": "Play sound only for the first update notification.",
   "settings.enable_bg_sync": "Ενημέρωση λιστών στο παρασκήνιο",
   "settings.enable_bg_sync_help": "Συγχρονίζει τις λίστες ακόμη και όταν η εφαρμογή είναι κλειστή. Αν απενεργοποιήσετε και τις δύο επιλογές, οι ενημερώσεις γίνονται μόνο όταν ανοίγετε την εφαρμογή.",
   "settings.language_dialog_title": "Γλώσσα",

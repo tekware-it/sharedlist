@@ -42,6 +42,7 @@ import {
   subscribeToAllStoredListsPush,
 } from "../push/subscribe";
 import { detectSystemLanguage, needsRtlRestart } from "../i18n";
+import { resetIosOnlyAlertOnceState } from "../notifications";
 
 
 type Props = {
@@ -840,6 +841,24 @@ function renderLanguageOption(
                   onValueChange={(value) =>
                     applySettingsAndMaybeResub({ notificationsEnabled: value })
                   }
+                />
+              </View>
+
+              <View style={styles.modalRow}>
+                <View style={styles.modalRowText}>
+                  <Text style={styles.rowLabel}>{t("settings.only_alert_once")}</Text>
+                  <Text style={styles.rowDescription}>
+                    {t("settings.only_alert_once_help")}
+                  </Text>
+                </View>
+                <Switch
+                  value={settings.notificationsOnlyAlertOnce}
+                  onValueChange={(value) => {
+                    if (value) {
+                      void resetIosOnlyAlertOnceState();
+                    }
+                    saveSettingsAndUpdate({ notificationsOnlyAlertOnce: value });
+                  }}
                 />
               </View>
 

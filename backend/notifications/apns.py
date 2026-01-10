@@ -76,11 +76,7 @@ async def send_list_update_apns(
 
   payload = {
     "aps": {
-      "alert": {
-        "title": "Lista aggiornata",
-        "body": "Una lista condivisa è stata modificata.",
-      },
-      "sound": "default",
+      "content-available": 1,
     },
     "type": "list_updated",
     "list_id": list_id,
@@ -91,7 +87,8 @@ async def send_list_update_apns(
   headers = {
     "authorization": f"bearer {token}",
     "apns-topic": APNS_BUNDLE_ID,
-    "apns-push-type": "alert",
+    "apns-push-type": "background",
+    "apns-priority": "5",
     "content-type": "application/json",
   }
 
@@ -101,4 +98,3 @@ async def send_list_update_apns(
       r = await client.post(url, headers=headers, content=json.dumps(payload))
       if r.status_code >= 400:
         print("APNs send error:", r.status_code, r.text)
-

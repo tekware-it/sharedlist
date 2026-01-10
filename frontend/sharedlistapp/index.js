@@ -75,7 +75,9 @@ messaging().setBackgroundMessageHandler(async (remoteMessage) => {
         changedListNames.length > 0
           ? changedListNames.length
           : 1;
-      notifyListsChanged(count);
+      await notifyListsChanged(count, {
+        onlyAlertOnce: settings?.notificationsOnlyAlertOnce ?? false,
+      });
     }
   } catch (e) {
     console.warn("[FCM] bg handler error", e);

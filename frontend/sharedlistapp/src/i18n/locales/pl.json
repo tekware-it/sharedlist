@@ -79,6 +79,8 @@
   "settings.notifications_dialog_title": "Powiadomienia",
   "settings.enable_notifications": "Włącz powiadomienia",
   "settings.enable_notifications_help": "Pokaż powiadomienia push, gdy udostępniona lista się zmienia.",
+  "settings.only_alert_once": "Alert only once",
+  "settings.only_alert_once_help": "Play sound only for the first update notification.",
   "settings.enable_bg_sync": "Aktualizuj listy w tle",
   "settings.enable_bg_sync_help": "Synchronizuje listy nawet gdy aplikacja jest zamknięta. Jeśli wyłączysz oba ustawienia, aktualizacje będą tylko po otwarciu aplikacji.",
   "settings.language_dialog_title": "Język",

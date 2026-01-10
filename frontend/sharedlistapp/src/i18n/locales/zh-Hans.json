@@ -79,6 +79,8 @@
   "settings.notifications_dialog_title": "通知",
   "settings.enable_notifications": "启用通知",
   "settings.enable_notifications_help": "共享清单变更时显示推送通知。",
+  "settings.only_alert_once": "Alert only once",
+  "settings.only_alert_once_help": "Play sound only for the first update notification.",
   "settings.enable_bg_sync": "后台更新清单",
   "settings.enable_bg_sync_help": "即使应用关闭也会同步清单。若关闭两项，更新仅在打开应用时进行。",
   "settings.language_dialog_title": "语言",

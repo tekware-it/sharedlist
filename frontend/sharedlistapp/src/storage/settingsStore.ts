@@ -27,6 +27,7 @@ export type AppSettings = {
   healthCheckIntervalMs: number;
   notificationsEnabled: boolean;
   backgroundSyncEnabled: boolean;
+  notificationsOnlyAlertOnce: boolean;
   language: LanguageOption;
   themeMode: ThemeMode;
 };
@@ -46,6 +47,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   healthCheckIntervalMs: DEFAULT_HEALTH_INTERVAL_MS,
   notificationsEnabled: true,
   backgroundSyncEnabled: true,
+  notificationsOnlyAlertOnce: false,
   language: "system",
   themeMode: "system",
 };
@@ -65,6 +67,9 @@ export async function loadSettings(): Promise<AppSettings> {
         parsed.notificationsEnabled ?? DEFAULT_SETTINGS.notificationsEnabled,
       backgroundSyncEnabled:
         parsed.backgroundSyncEnabled ?? DEFAULT_SETTINGS.backgroundSyncEnabled,
+      notificationsOnlyAlertOnce:
+        parsed.notificationsOnlyAlertOnce ??
+        DEFAULT_SETTINGS.notificationsOnlyAlertOnce,
       language: parsed.language ?? DEFAULT_SETTINGS.language,
       themeMode: parsed.themeMode ?? DEFAULT_SETTINGS.themeMode,
     };

@@ -79,6 +79,8 @@
   "settings.notifications_dialog_title": "الإشعارات",
   "settings.enable_notifications": "تفعيل الإشعارات",
   "settings.enable_notifications_help": "إظهار إشعارات عند تغيّر قائمة مشتركة.",
+  "settings.only_alert_once": "Alert only once",
+  "settings.only_alert_once_help": "Play sound only for the first update notification.",
   "settings.enable_bg_sync": "تحديث القوائم في الخلفية",
   "settings.enable_bg_sync_help": "تزامن القوائم حتى عند إغلاق التطبيق. إذا عطلت الخيارين، تحدث التحديثات عند فتح التطبيق فقط.",
   "settings.language_dialog_title": "اللغة",
