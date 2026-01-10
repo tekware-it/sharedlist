@@ -4,6 +4,8 @@
   "common.close": "关闭",
   "common.remove": "删除",
   "common.share": "分享",
+  "common.copy": "Copy",
+  "list.copy_link_to_clipboard": "Link copied to clipboard.",
   "common.copied": "已复制",
   "common.ok": "确定",
   "common.save": "保存",

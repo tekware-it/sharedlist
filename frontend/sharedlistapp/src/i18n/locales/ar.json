@@ -4,6 +4,8 @@
   "common.close": "إغلاق",
   "common.remove": "إزالة",
   "common.share": "مشاركة",
+  "common.copy": "Copy",
+  "list.copy_link_to_clipboard": "Link copied to clipboard.",
   "common.copied": "تم النسخ",
   "common.ok": "حسنًا",
   "common.save": "حفظ",

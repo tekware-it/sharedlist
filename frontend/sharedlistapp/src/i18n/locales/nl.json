@@ -4,6 +4,8 @@
   "common.close": "Sluiten",
   "common.remove": "Verwijderen",
   "common.share": "Delen",
+  "common.copy": "Copy",
+  "list.copy_link_to_clipboard": "Link copied to clipboard.",
   "common.copied": "Gekopieerd",
   "common.ok": "OK",
   "common.save": "Opslaan",

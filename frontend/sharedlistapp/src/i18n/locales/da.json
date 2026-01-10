@@ -4,6 +4,8 @@
   "common.close": "Luk",
   "common.remove": "Fjern",
   "common.share": "Del",
+  "common.copy": "Copy",
+  "list.copy_link_to_clipboard": "Link copied to clipboard.",
   "common.copied": "Kopieret",
   "common.ok": "OK",
   "common.save": "Gem",

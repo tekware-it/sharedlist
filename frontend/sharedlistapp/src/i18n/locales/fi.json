@@ -4,6 +4,8 @@
   "common.close": "Sulje",
   "common.remove": "Poista",
   "common.share": "Jaa",
+  "common.copy": "Copy",
+  "list.copy_link_to_clipboard": "Link copied to clipboard.",
   "common.copied": "Kopioitu",
   "common.ok": "OK",
   "common.save": "Tallenna",

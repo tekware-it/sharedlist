@@ -4,6 +4,8 @@
   "common.close": "Закрыть",
   "common.remove": "Удалить",
   "common.share": "Поделиться",
+  "common.copy": "Copy",
+  "list.copy_link_to_clipboard": "Link copied to clipboard.",
   "common.copied": "Скопировано",
   "common.ok": "ОК",
   "common.save": "Сохранить",

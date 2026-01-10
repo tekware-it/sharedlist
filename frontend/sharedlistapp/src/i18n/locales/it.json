@@ -4,6 +4,8 @@
   "common.close": "Chiudi",
   "common.remove": "Rimuovi",
   "common.share": "Condividi",
+  "common.copy": "Copia",
+  "list.copy_link_to_clipboard": "Link copiato negli appunti.",
   "common.copied": "Copiato",
   "common.ok": "OK",
   "common.save": "Salva",

@@ -4,6 +4,8 @@
   "common.close": "बंद करें",
   "common.remove": "हटाएं",
   "common.share": "साझा करें",
+  "common.copy": "Copy",
+  "list.copy_link_to_clipboard": "Link copied to clipboard.",
   "common.copied": "कॉपी हुआ",
   "common.ok": "ठीक",
   "common.save": "सहेजें",

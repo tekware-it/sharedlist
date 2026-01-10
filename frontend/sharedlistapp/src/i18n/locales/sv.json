@@ -4,6 +4,8 @@
   "common.close": "Stäng",
   "common.remove": "Ta bort",
   "common.share": "Dela",
+  "common.copy": "Copy",
+  "list.copy_link_to_clipboard": "Link copied to clipboard.",
   "common.copied": "Kopierat",
   "common.ok": "OK",
   "common.save": "Spara",

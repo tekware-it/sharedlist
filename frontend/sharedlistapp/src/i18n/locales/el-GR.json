@@ -4,6 +4,8 @@
   "common.close": "Κλείσιμο",
   "common.remove": "Αφαίρεση",
   "common.share": "Κοινοποίηση",
+  "common.copy": "Copy",
+  "list.copy_link_to_clipboard": "Link copied to clipboard.",
   "common.copied": "Αντιγράφηκε",
   "common.ok": "OK",
   "common.save": "Αποθήκευση",

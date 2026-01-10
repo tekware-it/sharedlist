@@ -14,9 +14,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ToastAndroid,
+  Modal,
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import QRCode from "react-native-qrcode-svg";
 
 import {
   apiGetList,
@@ -103,6 +105,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     syncEvents.getHealth()
   );
   const [removedFromServer, setRemovedFromServer] = useState(false);
+  const [shareDialogVisible, setShareDialogVisible] = useState(false);
 
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
@@ -239,6 +242,10 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const [creatingItem, setCreatingItem] = useState(false);
 
   const listKey: ListKey = listKeyParam;
+  const shareLink = useMemo(
+    () => buildSharedListUrl(listId, listKey),
+    [listId, listKey]
+  );
 
   //
   // Caricamento iniziale
@@ -556,31 +563,29 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   }, [listId]);
 
   async function handleShare() {
-    const deepLink = buildSharedListUrl(listId, listKey);
+    setShareDialogVisible(true);
+  }
 
-    Alert.alert(
-      t("list.shared_title"),
-      t("list.shared_warning"),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("common.share"),
-          style: "default",
-          onPress: async () => {
-            try {
-              await Share.share({
-                message: t("list.share_message", {
-                  name: meta?.name ?? t("list.title_fallback"),
-                  link: deepLink,
-                }),
-              });
-            } catch (e) {
-              console.log("Share cancelled/failed", e);
-            }
-          },
-        },
-      ]
-    );
+  async function handleShareNow() {
+    try {
+      await Share.share({
+        message: t("list.share_message", {
+          name: meta?.name ?? t("list.title_fallback"),
+          link: shareLink,
+        }),
+      });
+    } catch (e) {
+      console.log("Share cancelled/failed", e);
+    }
+  }
+
+  function handleCopyShareLink() {
+    Clipboard.setString(shareLink);
+    if (Platform.OS === "android") {
+      ToastAndroid.show(t("list.copy_link_to_clipboard"), ToastAndroid.SHORT);
+    } else {
+      Alert.alert(t("common.ok"), t("list.copy_link_to_clipboard"));
+    }
   }
 
  function showBackendStatusToast() {
@@ -1226,6 +1231,51 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Dialog Share */}
+      <Modal
+        transparent
+        visible={shareDialogVisible}
+        animationType="fade"
+        presentationStyle="overFullScreen"
+        supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
+        onRequestClose={() => setShareDialogVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t("list.shared_title")}</Text>
+            <View style={styles.qrWrapper}>
+              <QRCode value={shareLink} size={200} />
+            </View>
+            <Text style={styles.modalBody}>{t("list.shared_warning")}</Text>
+            <Text style={styles.shareLink} selectable>
+              {shareLink}
+            </Text>
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setShareDialogVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>{t("common.close")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={handleCopyShareLink}
+              >
+                <Text style={styles.modalButtonText}>{t("common.copy")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonPrimary]}
+                onPress={handleShareNow}
+              >
+                <Text style={[styles.modalButtonText, { color: "white" }]}>
+                  {t("common.share")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -1386,6 +1436,59 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
       borderColor: colors.border,
       marginTop: 8,
       paddingBottom: Platform.OS === "ios" ? 8 : 8,
+    },
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 24,
+    },
+    modalContent: {
+      width: "100%",
+      maxWidth: 420,
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+    },
+    modalTitle: {
+      fontSize: 18 * textScale,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 12,
+    },
+    modalBody: {
+      fontSize: 14 * textScale,
+      color: colors.mutedText,
+      marginBottom: 12,
+    },
+    modalButtonsRow: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      alignItems: "center",
+      marginTop: 12,
+    },
+    modalButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+      backgroundColor: colors.border,
+      marginLeft: 8,
+    },
+    modalButtonPrimary: {
+      backgroundColor: colors.primary,
+    },
+    modalButtonText: {
+      color: colors.text,
+      fontWeight: "600",
+    },
+    qrWrapper: {
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    shareLink: {
+      fontSize: 12 * textScale,
+      color: colors.mutedText,
     },
 
     crossedSeparator: {
