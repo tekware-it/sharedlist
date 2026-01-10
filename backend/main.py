@@ -162,6 +162,15 @@ async def ios_push_subscribe(
     db: AsyncConnection = Depends(get_conn),
 ):
     # volendo puoi controllare che la lista esista prima
+    print(
+        "[iOS Subscribe]",
+        "list_id=",
+        list_id,
+        "client_id=",
+        x_client_id,
+        "token_prefix=",
+        body.device_token[:8] if body.device_token else "",
+    )
     await upsert_ios_subscription(db, list_id, x_client_id, body.device_token)
     await db.commit()
     return
@@ -176,6 +185,15 @@ async def ios_push_unsubscribe(
     x_client_id: str = Header(..., alias="X-Client-Id"),
     db: AsyncConnection = Depends(get_conn),
 ):
+    print(
+        "[iOS Unsubscribe]",
+        "list_id=",
+        list_id,
+        "client_id=",
+        x_client_id,
+        "token_prefix=",
+        body.device_token[:8] if body.device_token else "",
+    )
     await delete_ios_subscription(db, list_id, x_client_id, body.device_token)
     await db.commit()
     return
@@ -718,4 +736,3 @@ async def healthz(conn=Depends(get_conn)):
         raise HTTPException(status_code=500, detail="Redis not available")
 
     return HealthzResponse(status="ok")
-
