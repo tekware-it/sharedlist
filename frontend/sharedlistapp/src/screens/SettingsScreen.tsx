@@ -43,6 +43,7 @@ import {
 } from "../push/subscribe";
 import { detectSystemLanguage, needsRtlRestart } from "../i18n";
 import { resetIosOnlyAlertOnceState } from "../notifications";
+import { restartForegroundSyncWorker } from "../sync/healthAndSyncWorker";
 
 
 type Props = {
@@ -269,9 +270,13 @@ export const SettingsScreen: React.FC<Props> = ({ onClose }) => {
     if (!Number.isFinite(sec) || sec <= 0) {
       sec = Math.round(DEFAULT_HEALTH_INTERVAL_MS / 1000);
     }
+    if (sec < 3) {
+      sec = 3;
+    }
     const ms = sec * 1000;
     try {
       await saveSettingsAndUpdate({ healthCheckIntervalMs: ms });
+      await restartForegroundSyncWorker();
       setHealthIntervalSec(String(sec));
       setActiveDialog("none");
       if (Platform.OS === "android") {

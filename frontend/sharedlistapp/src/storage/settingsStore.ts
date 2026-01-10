@@ -1,5 +1,6 @@
 // src/storage/settingsStore.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform, Settings } from "react-native";
 
 export type LanguageOption =
   | "system"
@@ -87,6 +88,17 @@ export async function saveSettings(
     ...partial,
   };
   await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(merged));
+  if (Platform.OS === "ios") {
+    try {
+      Settings.set({
+        "sharedlist.notificationsEnabled": merged.notificationsEnabled,
+        "sharedlist.backgroundSyncEnabled": merged.backgroundSyncEnabled,
+        "sharedlist.notificationsOnlyAlertOnce": merged.notificationsOnlyAlertOnce,
+      });
+    } catch (e) {
+      console.warn("[Settings] iOS mirror failed", e);
+    }
+  }
   return merged;
 }
 

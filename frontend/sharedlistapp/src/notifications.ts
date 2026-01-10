@@ -1,14 +1,13 @@
 // src/notifications.ts
-import { Platform, PermissionsAndroid } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform, PermissionsAndroid, Settings } from "react-native";
 import messaging from "@react-native-firebase/messaging";
 import PushNotification from "react-native-push-notification";
 import i18n from "./i18n";
 
 const CHANNEL_ID = "sharedlist-changes";
 const NOTIFICATION_ID_ANDROID = 1001;
-const NOTIFICATION_ID_IOS = "1001";
-const IOS_ALERT_ONCE_KEY = "sharedlist.notifications.iosAlerted";
+const NOTIFICATION_ID_IOS = "sharedlist-changes";
+const IOS_ALERT_ONCE_KEY = "sharedlist.iosAlerted";
 
 let initialized = false;
 
@@ -97,8 +96,8 @@ export async function notifyListsChanged(
   } else {
     if (onlyAlertOnce) {
       try {
-        const alreadyAlerted = await AsyncStorage.getItem(IOS_ALERT_ONCE_KEY);
-        if (alreadyAlerted === "1") {
+        const alreadyAlerted = Settings.get(IOS_ALERT_ONCE_KEY);
+        if (alreadyAlerted === true) {
           shouldPlaySound = false;
         }
       } catch (e) {
@@ -122,7 +121,7 @@ export async function notifyListsChanged(
 
   if (Platform.OS === "ios" && onlyAlertOnce && shouldPlaySound) {
     try {
-      await AsyncStorage.setItem(IOS_ALERT_ONCE_KEY, "1");
+      Settings.set({ [IOS_ALERT_ONCE_KEY]: true });
     } catch (e) {
       console.warn("[Push] iOS alert-once write failed", e);
     }
@@ -131,7 +130,7 @@ export async function notifyListsChanged(
 
 export async function resetIosOnlyAlertOnceState() {
   try {
-    await AsyncStorage.removeItem(IOS_ALERT_ONCE_KEY);
+    Settings.set({ [IOS_ALERT_ONCE_KEY]: false });
   } catch (e) {
     console.warn("[Push] iOS alert-once reset failed", e);
   }

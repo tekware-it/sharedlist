@@ -3,7 +3,7 @@ import '@react-native-firebase/app';
 import messaging from "@react-native-firebase/messaging";
 import "./src/i18n";
 
-import { AppRegistry } from "react-native";
+import { AppRegistry, NativeEventEmitter, NativeModules, Platform } from "react-native";
 import App from "./App";
 import { name as appName } from "./app.json";
 import { initNotifications, notifyListsChanged } from "./src/notifications";
@@ -14,6 +14,27 @@ import { loadSettings } from "./src/storage/settingsStore";
 
 // Inizializza le local notification (se hai già questo modulo)
 initNotifications();
+
+if (Platform.OS === "ios") {
+  const emitter = NativeModules.PushEventEmitter
+    ? new NativeEventEmitter(NativeModules.PushEventEmitter)
+    : null;
+
+  if (emitter) {
+    emitter.addListener("sharedlist_push", async (payload) => {
+      try {
+        if (payload?.type !== "list_updated") return;
+        const settings = await loadSettings().catch(() => null);
+        const backgroundSyncEnabled =
+          settings?.backgroundSyncEnabled ?? true;
+        if (!backgroundSyncEnabled) return;
+        await runHealthAndSyncOnce();
+      } catch (e) {
+        console.warn("[Push] iOS foreground handler error", e);
+      }
+    });
+  }
+}
 
 // Listener FCM quando l’app è in foreground
 messaging().onMessage(async (remoteMessage) => {

@@ -5,10 +5,12 @@ import {
   ActivityIndicator,
   AppState,
   SafeAreaView,
+  Settings,
   Text,
   View,
+  Linking,
+  Platform,
 } from "react-native";
-import { Linking } from "react-native";
 
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
@@ -33,6 +35,7 @@ import { subscribeToListPush } from "./src/push/subscribe";
 import {
   startForegroundSyncWorker,
   stopForegroundSyncWorker,
+  runHealthAndSyncOnce,
 } from "./src/sync/healthAndSyncWorker";
 import { startSyncWorker } from "./src/sync/syncWorker";
 import { ThemeContext, useResolvedTheme } from "./src/theme";
@@ -130,6 +133,17 @@ export default function App() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!ready || Platform.OS !== "ios") return;
+    const needsSync = Settings.get("sharedlist.needsSync");
+    if (needsSync === true) {
+      Settings.set({ "sharedlist.needsSync": false });
+      runHealthAndSyncOnce().catch((e) =>
+        console.warn("[App] deferred sync failed", e)
+      );
+    }
+  }, [ready]);
 
   // ---- Deep linking (iniziale + runtime) ----
   useEffect(() => {

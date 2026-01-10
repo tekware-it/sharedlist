@@ -280,3 +280,8 @@ export function stopForegroundSyncWorker() {
     foregroundIntervalId = null;
   }
 }
+
+export async function restartForegroundSyncWorker() {
+  stopForegroundSyncWorker();
+  await startForegroundSyncWorker();
+}
