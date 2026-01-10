@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.sharedlistapp",
+      "sha256_cert_fingerprints": [
+        "33:CD:C1:65:D5:10:68:C9:E2:99:DF:69:80:76:CD:5F:83:40:2A:44:CF:AF:77:81:04:C5:28:1C:2D:CC:0F:80"
+      ]
+    }
+  }
+]

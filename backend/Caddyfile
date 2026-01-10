@@ -1,3 +1,7 @@
 api.sharedlist.ovh {
   reverse_proxy backend:8000
 }
+
+sharedlist.ovh {
+  reverse_proxy landing:80
+}

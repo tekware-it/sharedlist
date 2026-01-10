@@ -62,6 +62,19 @@ services:
       - sharedlist_net
     depends_on:
       - backend
+      - landing
+
+  landing:
+    image: caddy:2
+    container_name: sharedlist_landing
+    restart: unless-stopped
+    expose:
+      - "80"
+    volumes:
+      - ./landing/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./landing/site:/srv:ro
+    networks:
+      - sharedlist_net
 
 volumes:
   db_data:

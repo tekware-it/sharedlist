@@ -42,6 +42,18 @@
                   android:scheme="sharedlist"
                   android:host="l" />
           </intent-filter>
+          <intent-filter android:autoVerify="true">
+              <action android:name="android.intent.action.VIEW" />
+
+              <category android:name="android.intent.category.DEFAULT" />
+              <category android:name="android.intent.category.BROWSABLE" />
+
+              <!-- https://sharedlist.ovh/l/<listId>#<key> -->
+              <data
+                  android:scheme="https"
+                  android:host="sharedlist.ovh"
+                  android:pathPrefix="/l/" />
+          </intent-filter>
       </activity>
     </application>
 </manifest>

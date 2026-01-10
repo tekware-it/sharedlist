@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "LK3J9ST7RM.it.tekware.sharedlistapp",
+        "paths": ["/l/*"]
+      }
+    ]
+  }
+}

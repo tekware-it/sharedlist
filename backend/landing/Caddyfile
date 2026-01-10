@@ -1,0 +1,6 @@
+:80 {
+  root * /srv
+  header /.well-known/apple-app-site-association Content-Type application/json
+  try_files {path} /index.html
+  file_server
+}

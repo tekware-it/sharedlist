@@ -1,6 +1,6 @@
 // src/screens/MyListsScreen.tsx
 import { subscribeToListPush, unsubscribeFromListPush } from "../push/subscribe";
-import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   View,
@@ -51,6 +51,7 @@ import { loadSettings } from "../storage/settingsStore";
 import { enqueueCreateList } from "../storage/syncQueue";
 
 import { decryptJson, encryptJson, type ListKey } from "../crypto/e2e";
+import { parseSharedListUrl } from "../linking/sharedListLink";
 import { triggerSyncNow } from "../sync/syncWorker";
 
 const PLACEHOLDER_NAME = "Lista importata"; // sentinel nello storage (non tradurre)
@@ -196,55 +197,25 @@ function parseSharedListDeepLink(text: string): {
     throw new Error("ERR_EMPTY");
   }
 
-  // Se l'utente incolla un testo lungo, estraiamo solo la prima occorrenza di sharedlist://...
-  const match = trimmed.match(/sharedlist:\/\/\S+/);
+  // Se l'utente incolla un testo lungo, estraiamo solo la prima occorrenza di link valido.
+  const match = trimmed.match(/(sharedlist:\/\/\S+|https:\/\/sharedlist\.ovh\/\S+)/i);
   const urlStr = match ? match[0] : trimmed;
 
-  if (!urlStr.toLowerCase().startsWith("sharedlist://")) {
-    throw new Error("ERR_SCHEME");
-  }
-
-  // Togliamo lo schema "sharedlist://"
-  let rest = urlStr.slice("sharedlist://".length);
-  // Rimuoviamo eventuali slash iniziali in eccesso
-  rest = rest.replace(/^\/+/, ""); // es. "l/ID?k=..." o "l/ID" ecc.
-
-  // Separiamo path e query
-  const [pathPart, queryPart = ""] = rest.split("?");
-  const segments = pathPart.split("/").filter(Boolean); // es. ["l", "<listId>"]
-
-  if (segments.length < 2) {
+  const parsed = parseSharedListUrl(urlStr);
+  if (!parsed) {
+    if (!/sharedlist:\/\/|https:\/\/sharedlist\.ovh\//i.test(urlStr)) {
+      throw new Error("ERR_SCHEME");
+    }
+    if (!/\/l\//i.test(urlStr)) {
+      throw new Error("ERR_BAD_PREFIX");
+    }
+    if (!/#/i.test(urlStr)) {
+      throw new Error("ERR_MISSING_KEY");
+    }
     throw new Error("ERR_INCOMPLETE_PATH");
   }
 
-  const first = segments[0];
-  if (first !== "l") {
-    throw new Error("ERR_BAD_PREFIX");
-  }
-
-  const listId = segments.slice(1).join("/"); // in pratica il resto dopo "l/"
-  if (!listId) {
-    throw new Error("ERR_MISSING_ID");
-  }
-
-  // Parse molto semplice della query: cerchiamo k=<chiave>
-  let listKey = "";
-  if (queryPart) {
-    const pairs = queryPart.split("&");
-    for (const pair of pairs) {
-      const [k, v] = pair.split("=");
-      if (k === "k" && v != null) {
-        listKey = decodeURIComponent(v);
-        break;
-      }
-    }
-  }
-
-  if (!listKey) {
-    throw new Error("ERR_MISSING_KEY");
-  }
-
-  return { listId, listKey };
+  return parsed;
 }
 
 
@@ -326,16 +297,16 @@ export const MyListsScreen: React.FC<Props> = ({
     });
   }, [backendOnline, navigation, onOpenSettings, styles]);
 
-  function computeHasRemoteChanges(l: StoredList): boolean {
+  const computeHasRemoteChanges = useCallback((l: StoredList): boolean => {
     if (l.removedFromServer) return false;
     if (l.lastRemoteRev == null) return false;
     if (l.lastSeenRev == null) return true; // mai vista → consideriamo "da leggere"
     return l.lastRemoteRev > l.lastSeenRev;
-  }
+  }, []);
 
-  function setListsFromStored(stored: StoredList[]) {
+  const setListsFromStored = useCallback((stored: StoredList[]) => {
     setLists(stored.map((l) => ({ ...l, hasRemoteChanges: computeHasRemoteChanges(l) })));
-  }
+  }, [computeHasRemoteChanges]);
 
   //
   // 1) Caricamento iniziale: solo liste locali (offline-first)

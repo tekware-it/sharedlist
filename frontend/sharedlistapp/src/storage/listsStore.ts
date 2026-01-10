@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { StoredList } from "./types";
 import i18n from "../i18n";
+import { syncEvents } from "../events/syncEvents";
 
 const STORAGE_KEY = "sharedlist.lists";
 
@@ -78,6 +79,7 @@ export async function updateLastSeenRev(
   if (idx >= 0) {
     current[idx] = { ...current[idx], lastSeenRev };
     await saveStoredLists(current);
+    syncEvents.emitListsChanged();
   }
 }
 

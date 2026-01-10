@@ -526,8 +526,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   }, [listId]);
 
   async function handleShare() {
-    const encodedKey = encodeURIComponent(listKey);
-    const deepLink = `sharedlist://l/${listId}?k=${encodedKey}`;
+    const deepLink = buildSharedListUrl(listId, listKey);
 
     Alert.alert(
       t("list.shared_title"),
