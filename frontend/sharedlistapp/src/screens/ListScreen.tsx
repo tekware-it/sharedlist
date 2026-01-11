@@ -15,10 +15,10 @@ import {
   Platform,
   ToastAndroid,
   Modal,
+  ScrollView,
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import QRCode from "react-native-qrcode-svg";
+import { useNavigation } from "@react-navigation/native";
 
 import {
   apiGetList,
@@ -52,7 +52,6 @@ import {
   saveStoredItems,
   type StoredItemPlain,
 } from "../storage/itemsStore";
-import { loadSettings } from "../storage/settingsStore";
 import Clipboard from "@react-native-clipboard/clipboard";
 import { syncEvents } from "../events/syncEvents";
 import { useTheme, type ThemeColors } from "../theme";
@@ -105,33 +104,11 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     syncEvents.getHealth()
   );
   const [removedFromServer, setRemovedFromServer] = useState(false);
-  const [shareDialogVisible, setShareDialogVisible] = useState(false);
 
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
 
-  const [textScale, setTextScale] = useState(1);
-  const styles = useMemo(() => makeStyles(colors, textScale), [colors, textScale]);
-
-  useFocusEffect(
-    React.useCallback(() => {
-      let active = true;
-      loadSettings()
-        .then((s) => {
-          if (active) {
-            setTextScale(s.textScale ?? 1);
-          }
-        })
-        .catch(() => {
-          if (active) {
-            setTextScale(1);
-          }
-        });
-      return () => {
-        active = false;
-      };
-    }, [])
-  );
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   useLayoutEffect(() => {
     if (Platform.OS !== "ios") return;
@@ -242,6 +219,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const [creatingItem, setCreatingItem] = useState(false);
 
   const listKey: ListKey = listKeyParam;
+
   const shareLink = useMemo(
     () => buildSharedListUrl(listId, listKey),
     [listId, listKey]
@@ -563,29 +541,31 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   }, [listId]);
 
   async function handleShare() {
-    setShareDialogVisible(true);
-  }
+    const deepLink = buildSharedListUrl(listId, listKey);
 
-  async function handleShareNow() {
-    try {
-      await Share.share({
-        message: t("list.share_message", {
-          name: meta?.name ?? t("list.title_fallback"),
-          link: shareLink,
-        }),
-      });
-    } catch (e) {
-      console.log("Share cancelled/failed", e);
-    }
-  }
-
-  function handleCopyShareLink() {
-    Clipboard.setString(shareLink);
-    if (Platform.OS === "android") {
-      ToastAndroid.show(t("list.copy_link_to_clipboard"), ToastAndroid.SHORT);
-    } else {
-      Alert.alert(t("common.ok"), t("list.copy_link_to_clipboard"));
-    }
+    Alert.alert(
+      t("list.shared_title"),
+      t("list.shared_warning"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.share"),
+          style: "default",
+          onPress: async () => {
+            try {
+              await Share.share({
+                message: t("list.share_message", {
+                  name: meta?.name ?? t("list.title_fallback"),
+                  link: deepLink,
+                }),
+              });
+            } catch (e) {
+              console.log("Share cancelled/failed", e);
+            }
+          },
+        },
+      ]
+    );
   }
 
  function showBackendStatusToast() {
@@ -779,29 +759,21 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       },
     };
 
-    setItems((prev) => {
-      const updatedList = prev.map((it) =>
-        it.localId === target.localId
-          ? { ...it, plaintext: updatedPlain }
-          : it
-      );
-
-      const plainForStore: StoredItemPlain[] = updatedList
-        .filter((it) => it.item_id != null && it.plaintext)
-        .map((it) => ({
-          itemId: it.item_id!,
-          label: it.plaintext!.label,
-          flags: it.plaintext!.flags,
-        }));
-
-      saveStoredItems(listId, plainForStore).catch((err) =>
-        console.warn("saveStoredItems after flag update failed", err)
-      );
-
-      return updatedList;
-    });
-
     if (removedFromServer) {
+      setItems((prev) => {
+        const updatedList = prev.map((it) =>
+          it.localId === target.localId
+            ? { ...it, plaintext: updatedPlain }
+            : it
+        );
+
+        saveStoredItems(listId, buildStoredItemsFromViews(updatedList)).catch(
+          (err) =>
+            console.warn("saveStoredItems after local flag update failed", err)
+        );
+
+        return updatedList;
+      });
       return;
     }
 
@@ -809,13 +781,19 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
 
     // Caso 1: item creato offline e non ancora sul server
     if (target.pendingCreate && target.pendingOpId) {
-      updateCreateItemOpCipher({
+      setItems((prev) =>
+        prev.map((it) =>
+          it.localId === target.localId
+            ? { ...it, plaintext: updatedPlain }
+            : it
+        )
+      );
+
+      await updateCreateItemOpCipher({
         opId: target.pendingOpId,
         ciphertextB64,
         nonceB64,
-      }).catch((err) =>
-        console.warn("updateCreateItemOpCipher failed", err)
-      );
+      });
 
       return;
     }
@@ -823,65 +801,86 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     // Caso 2: item già sul server
     if (target.item_id == null) return;
 
-    (async () => {
-      try {
-        const clientId = await getClientId();
-        const updated = await apiUpdateItem({
-          listId,
-          itemId: target.item_id!,
-          ciphertext_b64: ciphertextB64,
-          nonce_b64: nonceB64,
-          clientId,
-        });
+    try {
+      const clientId = await getClientId();
+      const updated = await apiUpdateItem({
+        listId,
+        itemId: target.item_id,
+        ciphertext_b64: ciphertextB64,
+        nonce_b64: nonceB64,
+        clientId,
+      });
 
-        await updateLastSeenRev(listId, updated.rev);
-      } catch (e: any) {
-        console.warn("Update item failed, queueing for sync", e?.message ?? e);
+      setItems((prev) => {
+        const updatedList = prev.map((it) =>
+          it.localId === target.localId
+            ? { ...it, plaintext: updatedPlain }
+            : it
+        );
 
-        const msg = String(e?.message ?? "");
-        // Errori HTTP veri (es. 404) -> non trattiamo come offline
-        if (msg.startsWith("HTTP ")) {
-          Alert.alert(t("common.error_title"), msg);
-          return;
-        }
+        const plainForStore: StoredItemPlain[] = updatedList
+          .filter((it) => it.item_id != null && it.plaintext)
+          .map((it) => ({
+            itemId: it.item_id!,
+            label: it.plaintext!.label,
+            flags: it.plaintext!.flags,
+          }));
 
-        // offline: mettiamo in coda un update_item e marchiamo ⏳
-        const op = await enqueueUpdateItem({
-          listId,
-          itemId: target.item_id!,
-          ciphertextB64,
-          nonceB64,
-        });
+        saveStoredItems(listId, plainForStore).catch((err) =>
+          console.warn("saveStoredItems after flag update failed", err)
+        );
 
-        setItems((prev) => {
-          const updatedList = prev.map((it) =>
-            it.localId === target.localId
-              ? { ...it, pendingUpdate: true, pendingOpId: op.id }
-              : it
-          );
+        return updatedList;
+      });
 
-          const plainForStore: StoredItemPlain[] = updatedList
-            .filter((it) => it.item_id != null && it.plaintext)
-            .map((it) => ({
-              itemId: it.item_id!,
-              label: it.plaintext!.label,
-              flags: it.plaintext!.flags,
-            }));
+      await updateLastSeenRev(listId, updated.rev);
+    } catch (e: any) {
+      console.warn("Update item failed, queueing for sync", e?.message ?? e);
 
-          saveStoredItems(listId, plainForStore).catch((err) =>
-            console.warn("saveStoredItems after offline flag update failed", err)
-          );
-
-          return updatedList;
-        });
-
-        if (Platform.OS === "android") {
-          ToastAndroid.show(t("list.offline_item_updated"), ToastAndroid.SHORT);
-        } else {
-          Alert.alert(t("common.offline"), t("list.offline_item_updated"));
-        }
+      const msg = String(e?.message ?? "");
+      // Errori HTTP veri (es. 404) -> non trattiamo come offline
+      if (msg.startsWith("HTTP ")) {
+        Alert.alert(t("common.error_title"), msg);
+        return;
       }
-    })();
+
+      // offline: mettiamo in coda un update_item e marchiamo ⏳
+      const op = await enqueueUpdateItem({
+        listId,
+        itemId: target.item_id,
+        ciphertextB64,
+        nonceB64,
+      });
+
+      setItems((prev) => {
+        const updatedList = prev.map((it) =>
+          it.localId === target.localId
+            ? {
+                ...it,
+                plaintext: updatedPlain,
+                pendingUpdate: true,
+                pendingOpId: op.id,
+              }
+            : it
+        );
+
+        const plainForStore: StoredItemPlain[] = updatedList
+          .filter((it) => it.item_id != null && it.plaintext)
+          .map((it) => ({
+            itemId: it.item_id!,
+            label: it.plaintext!.label,
+            flags: it.plaintext!.flags,
+          }));
+
+        saveStoredItems(listId, plainForStore).catch((err) =>
+          console.warn("saveStoredItems after offline flag update failed", err)
+        );
+
+        return updatedList;
+      });
+
+      Alert.alert(t("common.offline"), t("list.offline_item_updated"));
+    }
   }
 
   //
@@ -1057,9 +1056,17 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       <View style={styles.container}>
         {Platform.OS !== "ios" ? (
           <View style={styles.headerRow}>
-            <Text style={styles.title}>
-              {meta?.name ?? t("list.title_fallback")}
-            </Text>
+            <View style={styles.titleContainer}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                bounces={false}
+              >
+                <Text style={styles.title}>
+                  {meta?.name ?? t("list.title_fallback")}
+                </Text>
+              </ScrollView>
+            </View>
 
             <View style={styles.headerActions}>
               {/* pallino health a destra, prima delle icone */}
@@ -1212,56 +1219,11 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* Dialog Share */}
-      <Modal
-        transparent
-        visible={shareDialogVisible}
-        animationType="fade"
-        presentationStyle="overFullScreen"
-        supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
-        onRequestClose={() => setShareDialogVisible(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{t("list.shared_title")}</Text>
-            <View style={styles.qrWrapper}>
-              <QRCode value={shareLink} size={200} />
-            </View>
-            <Text style={styles.modalBody}>{t("list.shared_warning")}</Text>
-            <Text style={styles.shareLink} selectable>
-              {shareLink}
-            </Text>
-            <View style={styles.modalButtonsRow}>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setShareDialogVisible(false)}
-              >
-                <Text style={styles.modalButtonText}>{t("common.close")}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={handleCopyShareLink}
-              >
-                <Text style={styles.modalButtonText}>{t("common.copy")}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonPrimary]}
-                onPress={handleShareNow}
-              >
-                <Text style={[styles.modalButtonText, { color: "white" }]}>
-                  {t("common.share")}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </KeyboardAvoidingView>
   );
 };
 
-const makeStyles = (colors: ThemeColors, textScale: number) =>
+const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     flex: { flex: 1, backgroundColor: colors.background },
     container: {
@@ -1277,6 +1239,10 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
       backgroundColor: colors.background,
     },
     title: { fontSize: 20 * textScale, fontWeight: "700", marginRight: 8, color: colors.text },
+    titleContainer: {
+      flex: 1,
+      paddingRight: 8,
+    },
     headerRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -1325,7 +1291,7 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
       flex: 1,
     },
     itemLabel: {
-      fontSize: 16 * textScale,
+      fontSize: 16,
       color: colors.text,
     },
     itemLabelChecked: {
@@ -1361,7 +1327,7 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
       borderColor: colors.primary,
     },
     flagChipText: {
-      fontSize: 12 * textScale,
+      fontSize: 12,
       color: colors.text,
     },
 
@@ -1374,7 +1340,7 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
       paddingVertical: 4,
     },
     headerIconText: {
-      fontSize: 20 * textScale,
+      fontSize: 20,
       color: colors.text,
     },
     navHeaderRight: {
@@ -1387,7 +1353,7 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
       paddingVertical: 4,
     },
     navHeaderIcon: {
-      fontSize: 20 * textScale,
+      fontSize: 20,
       color: colors.text,
     },
 
@@ -1396,7 +1362,7 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
       paddingVertical: 4,
     },
     pendingItemIcon: {
-      fontSize: 16 * textScale,
+      fontSize: 16,
       color: colors.warning,
     },
 
@@ -1405,7 +1371,7 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
       paddingVertical: 4,
     },
     itemTrashText: {
-      fontSize: 18 * textScale,
+      fontSize: 18,
       color: colors.text,
     },
 
@@ -1417,59 +1383,6 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
       borderColor: colors.border,
       marginTop: 8,
       paddingBottom: Platform.OS === "ios" ? 8 : 8,
-    },
-    modalBackdrop: {
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
-      justifyContent: "center",
-      alignItems: "center",
-      padding: 24,
-    },
-    modalContent: {
-      width: "100%",
-      maxWidth: 420,
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 16,
-    },
-    modalTitle: {
-      fontSize: 18 * textScale,
-      fontWeight: "700",
-      color: colors.text,
-      marginBottom: 12,
-    },
-    modalBody: {
-      fontSize: 14 * textScale,
-      color: colors.mutedText,
-      marginBottom: 12,
-    },
-    modalButtonsRow: {
-      flexDirection: "row",
-      justifyContent: "flex-end",
-      alignItems: "center",
-      marginTop: 12,
-    },
-    modalButton: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 8,
-      backgroundColor: colors.border,
-      marginLeft: 8,
-    },
-    modalButtonPrimary: {
-      backgroundColor: colors.primary,
-    },
-    modalButtonText: {
-      color: colors.text,
-      fontWeight: "600",
-    },
-    qrWrapper: {
-      alignItems: "center",
-      marginBottom: 12,
-    },
-    shareLink: {
-      fontSize: 12 * textScale,
-      color: colors.mutedText,
     },
 
     crossedSeparator: {
