@@ -15,6 +15,7 @@ import {
   Platform,
   ToastAndroid,
   Modal,
+  ScrollView,
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -242,6 +243,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const [creatingItem, setCreatingItem] = useState(false);
 
   const listKey: ListKey = listKeyParam;
+
   const shareLink = useMemo(
     () => buildSharedListUrl(listId, listKey),
     [listId, listKey]
@@ -1067,9 +1069,17 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       <View style={styles.container}>
         {Platform.OS !== "ios" ? (
           <View style={styles.headerRow}>
-            <Text style={styles.title}>
-              {meta?.name ?? t("list.title_fallback")}
-            </Text>
+            <View style={styles.titleContainer}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                bounces={false}
+              >
+                <Text style={styles.title}>
+                  {meta?.name ?? t("list.title_fallback")}
+                </Text>
+              </ScrollView>
+            </View>
 
             <View style={styles.headerActions}>
               {/* pallino health a destra, prima delle icone */}
@@ -1287,6 +1297,10 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
       backgroundColor: colors.background,
     },
     title: { fontSize: 20 * textScale, fontWeight: "700", marginRight: 8, color: colors.text },
+    titleContainer: {
+      flex: 1,
+      paddingRight: 8,
+    },
     headerRow: {
       flexDirection: "row",
       alignItems: "center",
