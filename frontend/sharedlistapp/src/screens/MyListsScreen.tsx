@@ -17,6 +17,7 @@ import {
   TextInput,
 } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { Camera } from "react-native-camera-kit";
 
 import {
   loadStoredItems,
@@ -255,6 +256,7 @@ export const MyListsScreen: React.FC<Props> = ({
   );
   const [importDialogVisible, setImportDialogVisible] = useState(false);
   const [importLinkText, setImportLinkText] = useState("");
+  const [qrScannerVisible, setQrScannerVisible] = useState(false);
 
   const getListDisplayName = (list: StoredList): string => {
     if (list.name === PLACEHOLDER_NAME) {
@@ -612,6 +614,24 @@ export const MyListsScreen: React.FC<Props> = ({
     }
   }
 
+  function handleOpenQrScanner() {
+    setImportDialogVisible(false);
+    setQrScannerVisible(true);
+  }
+
+  function handleCloseQrScanner() {
+    setQrScannerVisible(false);
+    setImportDialogVisible(true);
+  }
+
+  function handleQrRead(event: { nativeEvent?: { codeStringValue?: string } }) {
+    const code = event?.nativeEvent?.codeStringValue?.trim();
+    if (!code) return;
+    setImportLinkText(code);
+    setQrScannerVisible(false);
+    setImportDialogVisible(true);
+  }
+
   //
   // Quando apro una lista:
   // - aggiorno lastSeenRev = lastRemoteRev (se esiste)
@@ -947,6 +967,13 @@ export const MyListsScreen: React.FC<Props> = ({
               </TouchableOpacity>
 
               <TouchableOpacity
+                style={styles.importModalButton}
+                onPress={handleOpenQrScanner}
+              >
+                <Text style={styles.importModalButtonText}>QR</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 style={[
                   styles.importModalButton,
                   styles.importModalButtonPrimary,
@@ -963,6 +990,34 @@ export const MyListsScreen: React.FC<Props> = ({
                 </Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal QR scanner */}
+      <Modal
+        visible={qrScannerVisible}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
+        onRequestClose={handleCloseQrScanner}
+      >
+        <View style={styles.qrScannerContainer}>
+          <Camera
+            style={styles.qrScannerCamera}
+            scanBarcode
+            onReadCode={handleQrRead}
+            showFrame={!(Platform.OS === "android" && Platform.Version < 28)}
+            laserColor={colors.primary}
+            frameColor={colors.primary}
+          />
+          <View style={styles.qrScannerFooter}>
+            <TouchableOpacity
+              style={styles.importModalButton}
+              onPress={handleCloseQrScanner}
+            >
+              <Text style={styles.importModalButtonText}>{t("common.cancel")}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -1159,5 +1214,20 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
     importModalButtonText: {
       fontSize: 14,
       color: colors.text,
+    },
+    qrScannerContainer: {
+      flex: 1,
+      backgroundColor: "black",
+    },
+    qrScannerCamera: {
+      flex: 1,
+    },
+    qrScannerFooter: {
+      position: "absolute",
+      bottom: 24,
+      left: 0,
+      right: 0,
+      flexDirection: "row",
+      justifyContent: "center",
     },
   });

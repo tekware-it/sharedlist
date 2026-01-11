@@ -19,6 +19,7 @@ import {
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useNavigation } from "@react-navigation/native";
+import QRCode from "react-native-qrcode-svg";
 
 import {
   apiGetList,
@@ -54,6 +55,7 @@ import {
 } from "../storage/itemsStore";
 import Clipboard from "@react-native-clipboard/clipboard";
 import { syncEvents } from "../events/syncEvents";
+import { loadSettings } from "../storage/settingsStore";
 import { useTheme, type ThemeColors } from "../theme";
 
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -104,11 +106,23 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     syncEvents.getHealth()
   );
   const [removedFromServer, setRemovedFromServer] = useState(false);
+  const [textScale, setTextScale] = useState(1);
+  const [shareDialogVisible, setShareDialogVisible] = useState(false);
 
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
 
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const styles = useMemo(() => makeStyles(colors, textScale), [colors, textScale]);
+
+  useEffect(() => {
+    loadSettings()
+      .then((s) => {
+        setTextScale(s.textScale ?? 1);
+      })
+      .catch(() => {
+        setTextScale(1);
+      });
+  }, []);
 
   useLayoutEffect(() => {
     if (Platform.OS !== "ios") return;
@@ -330,6 +344,16 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
         const itemsRes = await apiFetchItems({ listId });
         if (cancelled) return;
 
+        if (typeof itemsRes.latest_rev === "number") {
+          await upsertStoredList({
+            listId,
+            listKey,
+            lastRemoteRev: itemsRes.latest_rev,
+            removedFromServer: false,
+          } as any);
+          await updateLastSeenRev(listId, itemsRes.latest_rev);
+        }
+
         const plainForStore: StoredItemPlain[] = [];
         const serverItems: ItemView[] = itemsRes.items.map((it) => {
           try {
@@ -541,31 +565,29 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   }, [listId]);
 
   async function handleShare() {
-    const deepLink = buildSharedListUrl(listId, listKey);
+    setShareDialogVisible(true);
+  }
 
-    Alert.alert(
-      t("list.shared_title"),
-      t("list.shared_warning"),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("common.share"),
-          style: "default",
-          onPress: async () => {
-            try {
-              await Share.share({
-                message: t("list.share_message", {
-                  name: meta?.name ?? t("list.title_fallback"),
-                  link: deepLink,
-                }),
-              });
-            } catch (e) {
-              console.log("Share cancelled/failed", e);
-            }
-          },
-        },
-      ]
-    );
+  async function handleShareNow() {
+    try {
+      await Share.share({
+        message: t("list.share_message", {
+          name: meta?.name ?? t("list.title_fallback"),
+          link: shareLink,
+        }),
+      });
+    } catch (e) {
+      console.log("Share cancelled/failed", e);
+    }
+  }
+
+  function handleCopyShareLink() {
+    Clipboard.setString(shareLink);
+    if (Platform.OS === "android") {
+      ToastAndroid.show(t("list.copy_link_to_clipboard"), ToastAndroid.SHORT);
+    } else {
+      Alert.alert(t("common.ok"), t("list.copy_link_to_clipboard"));
+    }
   }
 
  function showBackendStatusToast() {
@@ -1219,11 +1241,56 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Dialog Share */}
+      <Modal
+        transparent
+        visible={shareDialogVisible}
+        animationType="fade"
+        presentationStyle="overFullScreen"
+        supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
+        onRequestClose={() => setShareDialogVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t("list.shared_title")}</Text>
+            <View style={styles.qrWrapper}>
+              <QRCode value={shareLink} size={200} />
+            </View>
+            <Text style={styles.modalBody}>{t("list.shared_warning")}</Text>
+            <Text style={styles.shareLink} selectable>
+              {shareLink}
+            </Text>
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setShareDialogVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>{t("common.close")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={handleCopyShareLink}
+              >
+                <Text style={styles.modalButtonText}>{t("common.copy")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonPrimary]}
+                onPress={handleShareNow}
+              >
+                <Text style={[styles.modalButtonText, { color: "white" }]}>
+                  {t("common.share")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, textScale: number) =>
   StyleSheet.create({
     flex: { flex: 1, backgroundColor: colors.background },
     container: {
@@ -1291,7 +1358,7 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
     },
     itemLabel: {
-      fontSize: 16,
+      fontSize: 16 * textScale,
       color: colors.text,
     },
     itemLabelChecked: {
@@ -1327,7 +1394,7 @@ const makeStyles = (colors: ThemeColors) =>
       borderColor: colors.primary,
     },
     flagChipText: {
-      fontSize: 12,
+      fontSize: 12 * textScale,
       color: colors.text,
     },
 
@@ -1340,7 +1407,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: 4,
     },
     headerIconText: {
-      fontSize: 20,
+      fontSize: 20 * textScale,
       color: colors.text,
     },
     navHeaderRight: {
@@ -1353,7 +1420,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: 4,
     },
     navHeaderIcon: {
-      fontSize: 20,
+      fontSize: 20 * textScale,
       color: colors.text,
     },
 
@@ -1362,7 +1429,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: 4,
     },
     pendingItemIcon: {
-      fontSize: 16,
+      fontSize: 16 * textScale,
       color: colors.warning,
     },
 
@@ -1371,7 +1438,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: 4,
     },
     itemTrashText: {
-      fontSize: 18,
+      fontSize: 18 * textScale,
       color: colors.text,
     },
 
@@ -1383,6 +1450,63 @@ const makeStyles = (colors: ThemeColors) =>
       borderColor: colors.border,
       marginTop: 8,
       paddingBottom: Platform.OS === "ios" ? 8 : 8,
+    },
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 24,
+    },
+    modalContent: {
+      width: "100%",
+      maxWidth: 420,
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+    },
+    modalTitle: {
+      fontSize: 18 * textScale,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 12,
+    },
+    modalBody: {
+      fontSize: 14 * textScale,
+      color: colors.mutedText,
+      marginBottom: 12,
+    },
+    modalButtonsRow: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      alignItems: "center",
+      marginTop: 12,
+    },
+    modalButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+      backgroundColor: colors.border,
+      marginLeft: 8,
+    },
+    modalButtonPrimary: {
+      backgroundColor: colors.primary,
+    },
+    modalButtonText: {
+      color: colors.text,
+      fontWeight: "600",
+    },
+    qrWrapper: {
+      alignItems: "center",
+      marginBottom: 12,
+      backgroundColor: "#FFFFFF",
+      padding: 8,
+      borderRadius: 6,
+      alignSelf: "center",
+    },
+    shareLink: {
+      fontSize: 12 * textScale,
+      color: colors.mutedText,
     },
 
     crossedSeparator: {
