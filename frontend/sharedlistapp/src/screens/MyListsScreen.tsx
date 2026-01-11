@@ -716,23 +716,18 @@ export const MyListsScreen: React.FC<Props> = ({
       );
       return;
     }
-    try {
-      const stored = await loadStoredLists();
-      const updated: StoredList[] = stored.map((l) =>
+    setLists((prev) =>
+      prev.map((l) =>
         l.listId === list.listId
           ? {
               ...l,
               lastSeenRev:
                 l.lastRemoteRev != null ? l.lastRemoteRev : l.lastSeenRev ?? null,
+              hasRemoteChanges: false,
             }
           : l
-      );
-      await saveStoredLists(updated);
-      setListsFromStored(updated);
-    } catch (e) {
-      console.warn("handleOpenList: unable to update lastSeenRev", e);
-    }
-
+      )
+    );
     onSelectList(list.listId, list.listKey);
   }
 
@@ -883,7 +878,14 @@ export const MyListsScreen: React.FC<Props> = ({
           data={lists}
           keyExtractor={(item) => item.listId}
           renderItem={({ item }) => (
-            <View style={styles.listRow}>
+            <View
+              style={[
+                styles.listRow,
+                item.hasRemoteChanges && !item.removedFromServer
+                  ? styles.listRowUpdated
+                  : null,
+              ]}
+            >
               <TouchableOpacity
                 style={styles.listRowText}
                 onPress={() => handleOpenList(item)}
@@ -907,7 +909,9 @@ export const MyListsScreen: React.FC<Props> = ({
                    )}
               </TouchableOpacity>
 
-              {item.hasRemoteChanges && !item.removedFromServer && <View style={styles.badge} />}
+              {item.hasRemoteChanges && !item.removedFromServer && (
+                <View style={styles.badge} />
+              )}
 
               {item.pendingCreate && (
                 <TouchableOpacity
@@ -1106,6 +1110,9 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
+    listRowUpdated: {
+      backgroundColor: `${colors.primary}12`,
+    },
     listRowText: { flex: 1 },
     listName: { fontSize: 16 * textScale, fontWeight: "500", color: colors.text },
     listId: { fontSize: 10, color: colors.mutedText },
@@ -1114,7 +1121,7 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
       width: 10 * textScale,
       height: 10 * textScale,
       borderRadius: 5 * textScale,
-      backgroundColor: colors.danger,
+      backgroundColor: colors.primary,
       marginRight: 8,
     },
 

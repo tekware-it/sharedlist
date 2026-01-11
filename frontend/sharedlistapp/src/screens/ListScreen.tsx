@@ -71,6 +71,7 @@ type ItemView = {
   localId: string;
   item_id: number | null;
   plaintext: ListItemPlain | null;
+  rev?: number | null;
   pendingCreate?: boolean;
   pendingUpdate?: boolean;
   pendingOpId?: string;
@@ -108,6 +109,10 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const [removedFromServer, setRemovedFromServer] = useState(false);
   const [textScale, setTextScale] = useState(1);
   const [shareDialogVisible, setShareDialogVisible] = useState(false);
+  const [highlightSinceRev, setHighlightSinceRev] = useState<number | null>(null);
+  const [clearedHighlightIds, setClearedHighlightIds] = useState<Set<string>>(
+    () => new Set()
+  );
 
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
@@ -226,6 +231,20 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       }));
   }
 
+  function getHighlightKey(item: ItemView): string {
+    return item.item_id != null ? String(item.item_id) : item.localId;
+  }
+
+  function markHighlightSeen(item: ItemView) {
+    const key = getHighlightKey(item);
+    setClearedHighlightIds((prev) => {
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+  }
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -261,6 +280,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
 
         foundList = storedLists.find((l) => l.listId === listId);
         setRemovedFromServer(!!foundList?.removedFromServer);
+        setHighlightSinceRev(foundList?.lastSeenRev ?? null);
         const offlineMeta: ListMeta = {
           name: foundList?.name ?? t("list.offline_title"),
           flagsDefinition: makeDefaultFlagsDefinition(t),
@@ -275,6 +295,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           localId:
             it.itemId != null ? `cache-${it.itemId}` : `cache-local-${idx}`,
           item_id: it.itemId,
+          rev: null,
           plaintext: {
             label: it.label,
             flags: it.flags,
@@ -303,6 +324,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           return {
             localId: `q-${op.id}`,
             item_id: null,
+            rev: null,
             plaintext: plain,
             pendingCreate: true,
             pendingOpId: op.id,
@@ -370,12 +392,14 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
             return {
               localId: `srv-${it.item_id}`,
               item_id: it.item_id,
+              rev: it.rev,
               plaintext: plain,
             };
           } catch {
             return {
               localId: `srv-${it.item_id}`,
               item_id: it.item_id,
+              rev: it.rev,
               plaintext: null,
             };
           }
@@ -403,6 +427,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           return {
             localId: `q-${op.id}`,
             item_id: null,
+            rev: null,
             plaintext: plain,
             pendingCreate: true,
             pendingOpId: op.id,
@@ -472,6 +497,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
               return {
                 localId: existing?.localId ?? `store-${s.itemId ?? idx}`,
                 item_id: s.itemId,
+                rev: existing?.rev ?? null,
                 plaintext: {
                   label: s.label,
                   flags: s.flags,
@@ -527,6 +553,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
               return {
                 ...it,
                 item_id: item.item_id,
+                rev: item.rev,
                 pendingCreate: false,
                 pendingOpId: undefined,
               };
@@ -534,6 +561,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
               // item esistente con pendingUpdate
               return {
                 ...it,
+                rev: item.rev,
                 pendingUpdate: false,
                 pendingOpId: undefined,
               };
@@ -689,6 +717,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
                 ? {
                     ...it,
                     plaintext: plain,
+                    rev: created.rev,
                     pendingCreate: false,
                     pendingUpdate: false,
                     pendingOpId: undefined,
@@ -702,6 +731,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
               {
                 localId: `srv-${created.item_id}`,
                 item_id: created.item_id,
+                rev: created.rev,
                 plaintext: plain,
                 pendingCreate: false,
                 pendingUpdate: false,
@@ -770,6 +800,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   type FlagKey = "checked" | "crossed" | "highlighted";
 
   async function handleToggleFlag(target: ItemView, flag: FlagKey) {
+    markHighlightSeen(target);
     if (!target.plaintext) return;
 
     const basePlain = target.plaintext;
@@ -785,7 +816,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       setItems((prev) => {
         const updatedList = prev.map((it) =>
           it.localId === target.localId
-            ? { ...it, plaintext: updatedPlain }
+            ? { ...it, plaintext: updatedPlain, rev: updated.rev }
             : it
         );
 
@@ -1137,6 +1168,10 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
               ];
 
               const isPending = item.pendingCreate || item.pendingUpdate;
+              const isUpdated =
+                item.rev != null &&
+                (highlightSinceRev == null || item.rev > highlightSinceRev) &&
+                !clearedHighlightIds.has(getHighlightKey(item));
 
               return (
                 <>
@@ -1150,12 +1185,21 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
                     </View>
                   )}
 
-                  <View style={styles.itemRow}>
-                    <View style={styles.itemContent}>
+                  <View
+                    style={[
+                      styles.itemRow,
+                      isUpdated && styles.itemRowUpdated,
+                    ]}
+                  >
+                    <TouchableOpacity
+                      style={styles.itemContent}
+                      activeOpacity={1}
+                      onPress={() => markHighlightSeen(item)}
+                    >
                       <Text style={labelStyles}>
                         {item.plaintext?.label ?? t("list.cipher_unreadable")}
                       </Text>
-                    </View>
+                    </TouchableOpacity>
 
                     <View style={styles.itemRightRow}>
                       {flags && (
@@ -1353,6 +1397,9 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
       paddingVertical: 10,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
+    },
+    itemRowUpdated: {
+      backgroundColor: `${colors.primary}12`,
     },
     itemContent: {
       flex: 1,
