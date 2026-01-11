@@ -352,6 +352,16 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
         const itemsRes = await apiFetchItems({ listId });
         if (cancelled) return;
 
+        if (typeof itemsRes.latest_rev === "number") {
+          await upsertStoredList({
+            listId,
+            listKey,
+            lastRemoteRev: itemsRes.latest_rev,
+            removedFromServer: false,
+          } as any);
+          await updateLastSeenRev(listId, itemsRes.latest_rev);
+        }
+
         const plainForStore: StoredItemPlain[] = [];
         const serverItems: ItemView[] = itemsRes.items.map((it) => {
           try {
@@ -1466,6 +1476,10 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
     qrWrapper: {
       alignItems: "center",
       marginBottom: 12,
+      backgroundColor: "#FFFFFF",
+      padding: 8,
+      borderRadius: 6,
+      alignSelf: "center",
     },
     shareLink: {
       fontSize: 12 * textScale,
