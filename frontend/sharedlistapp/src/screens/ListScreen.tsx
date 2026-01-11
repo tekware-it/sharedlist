@@ -1,5 +1,5 @@
 // src/screens/ListScreen.tsx
-import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -113,6 +113,19 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
   const [clearedHighlightIds, setClearedHighlightIds] = useState<Set<string>>(
     () => new Set()
   );
+  const [updatedItemIds, setUpdatedItemIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [recentDotIds, setRecentDotIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [pendingScrollItemId, setPendingScrollItemId] = useState<string | null>(
+    null
+  );
+  const recentUpdateTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map()
+  );
+  const listRef = useRef<FlatList<ItemView>>(null);
 
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
@@ -127,6 +140,13 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       .catch(() => {
         setTextScale(1);
       });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      recentUpdateTimers.current.forEach((timer) => clearTimeout(timer));
+      recentUpdateTimers.current.clear();
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -235,6 +255,48 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     return item.item_id != null ? String(item.item_id) : item.localId;
   }
 
+  function clearRecentDot(key: string) {
+    setRecentDotIds((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  }
+
+  function markRecentlyUpdated(keys: string[]) {
+    if (keys.length === 0) return;
+    setUpdatedItemIds((prev) => {
+      const next = new Set(prev);
+      keys.forEach((key) => next.add(key));
+      return next;
+    });
+    setClearedHighlightIds((prev) => {
+      let changed = false;
+      const next = new Set(prev);
+      keys.forEach((key) => {
+        if (next.delete(key)) changed = true;
+      });
+      return changed ? next : prev;
+    });
+    setRecentDotIds((prev) => {
+      const next = new Set(prev);
+      keys.forEach((key) => {
+        next.add(key);
+        const existing = recentUpdateTimers.current.get(key);
+        if (existing) clearTimeout(existing);
+        recentUpdateTimers.current.set(
+          key,
+          setTimeout(() => {
+            clearRecentDot(key);
+            recentUpdateTimers.current.delete(key);
+          }, 5000)
+        );
+      });
+      return next;
+    });
+  }
+
   function markHighlightSeen(item: ItemView) {
     const key = getHighlightKey(item);
     setClearedHighlightIds((prev) => {
@@ -243,6 +305,13 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       next.add(key);
       return next;
     });
+    setUpdatedItemIds((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+    clearRecentDot(key);
   }
 
   const [loading, setLoading] = useState(true);
@@ -257,6 +326,25 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     () => buildSharedListUrl(listId, listKey),
     [listId, listKey]
   );
+
+  useEffect(() => {
+    if (!pendingScrollItemId) return;
+    const index = orderedItems.findIndex(
+      (it) => it.item_id != null && String(it.item_id) === pendingScrollItemId
+    );
+    if (index < 0) {
+      setPendingScrollItemId(null);
+      return;
+    }
+    requestAnimationFrame(() => {
+      try {
+        listRef.current?.scrollToIndex({ index, viewPosition: 0.5 });
+      } catch (e) {
+        console.warn("scrollToIndex failed", e);
+      }
+    });
+    setPendingScrollItemId(null);
+  }, [orderedItems, pendingScrollItemId]);
 
   //
   // Caricamento iniziale
@@ -435,7 +523,35 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
         });
 
         if (cancelled) return;
-        setItems([...serverItems, ...pendingItems2]);
+        const changedKeys: string[] = [];
+        setItems((prev) => {
+          const prevById = new Map<number, ItemView>();
+          prev.forEach((it) => {
+            if (it.item_id != null) {
+              prevById.set(it.item_id, it);
+            }
+          });
+
+          serverItems.forEach((it) => {
+            if (it.item_id == null) return;
+            const prevItem = prevById.get(it.item_id);
+            if (!prevItem?.plaintext || !it.plaintext) return;
+            const labelChanged = prevItem.plaintext.label !== it.plaintext.label;
+            const flagsChanged =
+              prevItem.plaintext.flags.checked !== it.plaintext.flags.checked ||
+              prevItem.plaintext.flags.crossed !== it.plaintext.flags.crossed ||
+              prevItem.plaintext.flags.highlighted !== it.plaintext.flags.highlighted;
+            if (labelChanged || flagsChanged) {
+              changedKeys.push(String(it.item_id));
+            }
+          });
+
+          return [...serverItems, ...pendingItems2];
+        });
+        if (changedKeys.length > 0) {
+          markRecentlyUpdated(changedKeys);
+          setPendingScrollItemId(changedKeys[0]);
+        }
 
         // aggiorniamo la cache locale con la versione più recente
         saveStoredItems(listId, plainForStore).catch((err) =>
@@ -479,6 +595,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
     useEffect(() => {
       const unsubscribe = syncEvents.subscribeListsChanged(async () => {
         try {
+          const changedKeys: string[] = [];
           const stored = await loadStoredItems(listId);
 
           setItems((prev) => {
@@ -493,6 +610,22 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
             const storedViews: ItemView[] = stored.map((s, idx) => {
               const existing =
                 s.itemId != null ? existingById.get(s.itemId) : undefined;
+
+              if (
+                existing &&
+                !existing.pendingCreate &&
+                !existing.pendingUpdate &&
+                existing.plaintext
+              ) {
+                const labelChanged = existing.plaintext.label !== s.label;
+                const flagsChanged =
+                  existing.plaintext.flags.checked !== s.flags.checked ||
+                  existing.plaintext.flags.crossed !== s.flags.crossed ||
+                  existing.plaintext.flags.highlighted !== s.flags.highlighted;
+                if (labelChanged || flagsChanged) {
+                  changedKeys.push(String(s.itemId));
+                }
+              }
 
               return {
                 localId: existing?.localId ?? `store-${s.itemId ?? idx}`,
@@ -515,6 +648,11 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
 
             return [...storedViews, ...pendingOnly];
           });
+
+          if (changedKeys.length > 0) {
+            markRecentlyUpdated(changedKeys);
+            setPendingScrollItemId(changedKeys[0]);
+          }
 
           // 2) marcare la rev remota come "vista" se questa lista è ancora presente
           const lists = await loadStoredLists();
@@ -816,7 +954,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
       setItems((prev) => {
         const updatedList = prev.map((it) =>
           it.localId === target.localId
-            ? { ...it, plaintext: updatedPlain, rev: updated.rev }
+            ? { ...it, plaintext: updatedPlain, rev: it.rev ?? null }
             : it
         );
 
@@ -1156,6 +1294,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
           <Text style={styles.emptyText}>{t("list.empty")}</Text>
         ) : (
           <FlatList
+            ref={listRef}
             data={orderedItems}
             keyExtractor={(it) => it.localId}
             renderItem={({ item, index }) => {
@@ -1168,10 +1307,13 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
               ];
 
               const isPending = item.pendingCreate || item.pendingUpdate;
+              const key = getHighlightKey(item);
               const isUpdated =
                 item.rev != null &&
                 (highlightSinceRev == null || item.rev > highlightSinceRev) &&
-                !clearedHighlightIds.has(getHighlightKey(item));
+                !clearedHighlightIds.has(key);
+              const isHighlighted = isUpdated || updatedItemIds.has(key);
+              const isRecentDot = recentDotIds.has(key);
 
               return (
                 <>
@@ -1188,7 +1330,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
                   <View
                     style={[
                       styles.itemRow,
-                      isUpdated && styles.itemRowUpdated,
+                      isHighlighted && styles.itemRowUpdated,
                     ]}
                   >
                     <TouchableOpacity
@@ -1202,6 +1344,7 @@ export const ListScreen: React.FC<Props> = ({ listId, listKeyParam }) => {
                     </TouchableOpacity>
 
                     <View style={styles.itemRightRow}>
+                      {isRecentDot && <View style={styles.recentDot} />}
                       {flags && (
                         <View style={styles.flagsRow}>
                           <TouchableOpacity
@@ -1422,6 +1565,13 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
     itemRightRow: {
       flexDirection: "row",
       alignItems: "center",
+    },
+    recentDot: {
+      width: 8 * textScale,
+      height: 8 * textScale,
+      borderRadius: 4 * textScale,
+      backgroundColor: colors.primary,
+      marginRight: 6,
     },
 
     flagsRow: {
