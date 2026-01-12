@@ -135,6 +135,23 @@ def update_changelog(path: Path, content: str) -> None:
     write_text(path, updated)
 
 
+def read_existing_changelog(path: Path) -> str:
+    if not path.exists():
+        raise RuntimeError(f"{path} not found. Create it before using --use-existing-changelog.")
+    text = read_text(path).strip()
+    if not text:
+        raise RuntimeError(f"{path} is empty. Add release notes before using --use-existing-changelog.")
+
+    match = re.search(r"^##\s+.+$", text, flags=re.MULTILINE)
+    if not match:
+        raise RuntimeError(f"{path} must start with a '##' heading for release notes.")
+
+    start = match.start()
+    next_heading = re.search(r"^##\s+.+$", text[match.end():], flags=re.MULTILINE)
+    end = match.end() + (next_heading.start() if next_heading else len(text) - match.end())
+    return text[start:end].rstrip() + "\n"
+
+
 def create_git_tag(version: str, release_notes: str) -> None:
     tag_name = f"v{version}"
     run(["git", "tag", "-a", tag_name, "-m", release_notes])
@@ -175,6 +192,11 @@ def main() -> int:
         help="Skip updating CHANGELOG.md.",
     )
     parser.add_argument(
+        "--use-existing-changelog",
+        action="store_true",
+        help="Use existing CHANGELOG.md for release notes without updating it.",
+    )
+    parser.add_argument(
         "--no-commit",
         action="store_true",
         help="Skip creating a git commit.",
@@ -204,8 +226,10 @@ def main() -> int:
     update_ios_pbxproj(pbxproj, version, build_number)
 
     release_notes = ""
-    if not args.no_changelog:
-        changelog = ROOT / "CHANGELOG.md"
+    changelog = ROOT / "CHANGELOG.md"
+    if args.use_existing_changelog:
+        release_notes = read_existing_changelog(changelog)
+    elif not args.no_changelog:
         changelog_text, release_notes = build_changelog(version)
         update_changelog(changelog, changelog_text)
 
