@@ -51,6 +51,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Serve per leggere i QR code delle liste.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs access to your local network to connect to devices and services.</string>
 	<key>NSCameraUsageDescription</key>

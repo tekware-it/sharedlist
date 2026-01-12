@@ -37,6 +37,7 @@
   "myLists.removed_from_server": "सर्वर से हटाई गई",
   "myLists.removed_from_server_msg": "यह सूची अब सर्वर पर मौजूद नहीं है। आप स्थानीय डेटा देख सकते हैं, लेकिन यह अब सिंक नहीं होगी।",
   "myLists.import_dialog_title": "सूची लिंक पेस्ट करें",
+  "myLists.camera_permission_denied": "Camera permission is required to scan QR codes.",
   "myLists.import_dialog_helper": "ऐसा लिंक पेस्ट करें:\nhttps://sharedlist.ovh/l/<id>#<key>",
   "myLists.import_dialog_placeholder": "https://sharedlist.ovh/l/...",
   "myLists.import_dialog_import": "आयात करें",

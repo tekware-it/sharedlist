@@ -37,6 +37,7 @@
   "myLists.removed_from_server": "Borttagen från servern",
   "myLists.removed_from_server_msg": "Denna lista finns inte längre på servern. Du kan fortfarande se lokala data, men den synkas inte längre.",
   "myLists.import_dialog_title": "Klistra in listlänk",
+  "myLists.camera_permission_denied": "Camera permission is required to scan QR codes.",
   "myLists.import_dialog_helper": "Klistra in en länk som:\nhttps://sharedlist.ovh/l/<id>#<key>",
   "myLists.import_dialog_placeholder": "https://sharedlist.ovh/l/...",
   "myLists.import_dialog_import": "Importera",

@@ -12,8 +12,11 @@
 		0FAC4C0F2F0F1DA100DA3884 /* LaunchScreen.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 0FAC4C0B2F0F1D3800DA3884 /* LaunchScreen.xcstrings */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		2328E204DC1D94CD3BCD5672 /* libPods-sharedlistapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9778A5A29CFD0AB30D98E7CD /* libPods-sharedlistapp.a */; };
+		3E7B8D4F9C2A4B1C8E6A0F22 /* QrScannerModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C2F4AFA1E7C4A2A9B1E0B31 /* QrScannerModule.swift */; };
+		5A6B7C8D9E0F1A2B3C4D5E6F /* QrScannerModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B2C3D4E5F60718293A4B5C6 /* QrScannerModule.m */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		77F8951E9C93ACBB6721ED63 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		9F1C2D3E4B5A6C7D8E9F0A1B /* QrScannerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0E9D7A4E3E4C2BAE6F7A11 /* QrScannerViewController.swift */; };
 		D0D0D0D0D0D0D0D0D0D0B002 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D0D0D0D0D0D0D0D0D0D0D002 /* InfoPlist.strings */; };
 		E75F33027BCBB999595DB208 /* PushEventEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E84746EA293FA57931FDAC70 /* PushEventEmitter.swift */; };
 /* End PBXBuildFile section */
@@ -29,7 +32,11 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = sharedlistapp/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = sharedlistapp/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = sharedlistapp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		1B2C3D4E5F60718293A4B5C6 /* QrScannerModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = QrScannerModule.m; path = sharedlistapp/QrScannerModule.m; sourceTree = "<group>"; };
+		1A0E9D7A4E3E4C2BAE6F7A11 /* QrScannerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = QrScannerViewController.swift; path = sharedlistapp/QrScannerViewController.swift; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = sharedlistapp/AppDelegate.swift; sourceTree = "<group>"; };
+		6C2F4AFA1E7C4A2A9B1E0B31 /* QrScannerModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = QrScannerModule.swift; path = sharedlistapp/QrScannerModule.swift; sourceTree = "<group>"; };
+		7B9E4F2D3C1A0B8E9D7C6A55 /* sharedlistapp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "sharedlistapp-Bridging-Header.h"; path = "sharedlistapp/sharedlistapp-Bridging-Header.h"; sourceTree = "<group>"; };
 		9778A5A29CFD0AB30D98E7CD /* libPods-sharedlistapp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-sharedlistapp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B3B2319454798631D1C95978 /* Pods-sharedlistapp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sharedlistapp.debug.xcconfig"; path = "Target Support Files/Pods-sharedlistapp/Pods-sharedlistapp.debug.xcconfig"; sourceTree = "<group>"; };
 		C0FFEE000000000000000001 /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = sharedlistapp/en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -80,6 +87,10 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				E84746EA293FA57931FDAC70 /* PushEventEmitter.swift */,
+				6C2F4AFA1E7C4A2A9B1E0B31 /* QrScannerModule.swift */,
+				1B2C3D4E5F60718293A4B5C6 /* QrScannerModule.m */,
+				1A0E9D7A4E3E4C2BAE6F7A11 /* QrScannerViewController.swift */,
+				7B9E4F2D3C1A0B8E9D7C6A55 /* sharedlistapp-Bridging-Header.h */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				D0D0D0D0D0D0D0D0D0D0D002 /* InfoPlist.strings */,
 				0FAC4C042F0F18E700DA3884 /* LaunchScreen.storyboard */,
@@ -321,6 +332,9 @@
 			files = (
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
 				E75F33027BCBB999595DB208 /* PushEventEmitter.swift in Sources */,
+				3E7B8D4F9C2A4B1C8E6A0F22 /* QrScannerModule.swift in Sources */,
+				9F1C2D3E4B5A6C7D8E9F0A1B /* QrScannerViewController.swift in Sources */,
+				5A6B7C8D9E0F1A2B3C4D5E6F /* QrScannerModule.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -405,6 +419,7 @@
 				PRODUCT_NAME = sharedlistapp;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "sharedlistapp/sharedlistapp-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -436,6 +451,7 @@
 				PRODUCT_NAME = sharedlistapp;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "sharedlistapp/sharedlistapp-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";

@@ -15,6 +15,7 @@ import {
   Platform,
   Modal,
   TextInput,
+  NativeModules,
 } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { Camera } from "react-native-camera-kit";
@@ -256,6 +257,9 @@ export const MyListsScreen: React.FC<Props> = ({
   );
   const [importDialogVisible, setImportDialogVisible] = useState(false);
   const [importLinkText, setImportLinkText] = useState("");
+  const [qrCameraAuthorized, setQrCameraAuthorized] = useState<boolean | null>(
+    null
+  );
   const [qrScannerVisible, setQrScannerVisible] = useState(false);
 
   const getListDisplayName = (list: StoredList): string => {
@@ -526,8 +530,18 @@ export const MyListsScreen: React.FC<Props> = ({
   // Import via deep link (+)
   //
   async function handleImportConfirm() {
+    await handleImportFromText(importLinkText, true);
+  }
+
+  async function handleImportFromText(
+    text: string,
+    autoOpen: boolean
+  ): Promise<boolean> {
     try {
-      const { listId, listKey } = parseSharedListDeepLink(importLinkText);
+      if (autoOpen) {
+        setImportDialogVisible(false);
+      }
+      const { listId, listKey } = parseSharedListDeepLink(text);
 
       let finalName = PLACEHOLDER_NAME;
       let lastRemoteRev: number | null = null;
@@ -600,21 +614,60 @@ export const MyListsScreen: React.FC<Props> = ({
       // 4) aggiorniamo lo stato in memoria
       setListsFromStored(updated);
 
-      // 5) chiudiamo dialog + puliamo input
-      setImportDialogVisible(false);
-      setImportLinkText("");
-
-      // 6) e apriamo subito la lista importata
-      onSelectList(listId, listKey);
+      if (autoOpen) {
+        // 5) chiudiamo dialog + puliamo input
+        setImportDialogVisible(false);
+        setImportLinkText("");
+        // 6) e apriamo subito la lista importata
+        onSelectList(listId, listKey);
+      } else {
+        setImportLinkText("");
+      }
+      return true;
     } catch (e: any) {
       Alert.alert(
         t("myLists.invalid_link_title"),
         mapDeepLinkErrorToMessage(e?.message, t)
       );
+      return false;
     }
   }
 
-  function handleOpenQrScanner() {
+  async function handleOpenQrScanner() {
+    if (Platform.OS === "ios") {
+      setImportDialogVisible(false);
+      const module = NativeModules?.QrScannerModule;
+      if (!module?.openScanner) {
+        console.warn("[QrScanner] native module not available");
+        setImportDialogVisible(true);
+        return;
+      }
+      let shouldReopenDialog = true;
+      try {
+        const result = await module.openScanner(t("common.close"));
+        if (typeof result === "string") {
+          setImportLinkText(result);
+          const ok = await handleImportFromText(result, true);
+          shouldReopenDialog = !ok;
+        }
+      } catch (e: any) {
+        if (e?.code === "E_CAMERA_PERMISSION") {
+          Alert.alert(
+            t("common.error_title"),
+            t("myLists.camera_permission_denied")
+          );
+        } else {
+          console.warn("[QrScanner] openScanner failed", e);
+        }
+      } finally {
+        if (shouldReopenDialog) {
+          setImportDialogVisible(true);
+        }
+      }
+      return;
+    } else {
+      setQrCameraAuthorized(true);
+    }
     setImportDialogVisible(false);
     setQrScannerVisible(true);
   }
@@ -629,7 +682,7 @@ export const MyListsScreen: React.FC<Props> = ({
     if (!code) return;
     setImportLinkText(code);
     setQrScannerVisible(false);
-    setImportDialogVisible(true);
+    handleImportFromText(code, true);
   }
 
   //
@@ -998,33 +1051,43 @@ export const MyListsScreen: React.FC<Props> = ({
         </View>
       </Modal>
 
-      {/* Modal QR scanner */}
-      <Modal
-        visible={qrScannerVisible}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
-        onRequestClose={handleCloseQrScanner}
-      >
-        <View style={styles.qrScannerContainer}>
-          <Camera
-            style={styles.qrScannerCamera}
-            scanBarcode
-            onReadCode={handleQrRead}
-            showFrame={!(Platform.OS === "android" && Platform.Version < 28)}
-            laserColor={colors.primary}
-            frameColor={colors.primary}
-          />
-          <View style={styles.qrScannerFooter}>
-            <TouchableOpacity
-              style={styles.importModalButton}
-              onPress={handleCloseQrScanner}
-            >
-              <Text style={styles.importModalButtonText}>{t("common.cancel")}</Text>
-            </TouchableOpacity>
+      {Platform.OS === "android" ? (
+        <Modal
+          visible={qrScannerVisible}
+          animationType="slide"
+          presentationStyle="fullScreen"
+          supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
+          onRequestClose={handleCloseQrScanner}
+        >
+          <View style={styles.qrScannerContainer}>
+            {qrCameraAuthorized ? (
+              <Camera
+                style={styles.qrScannerCamera}
+                scanBarcode
+                onReadCode={handleQrRead}
+                showFrame={!(Platform.OS === "android" && Platform.Version < 28)}
+                laserColor={colors.primary}
+                frameColor={colors.primary}
+                pointerEvents="none"
+              />
+            ) : (
+              <View style={styles.qrScannerFallback}>
+                <Text style={styles.qrScannerFallbackText}>
+                  {t("myLists.camera_permission_denied")}
+                </Text>
+              </View>
+            )}
+            <View style={styles.qrScannerFooter}>
+              <TouchableOpacity
+                style={styles.importModalButton}
+                onPress={handleCloseQrScanner}
+              >
+                <Text style={styles.importModalButtonText}>{t("common.cancel")}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      ) : null}
     </View>
   );
 };
@@ -1229,6 +1292,17 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
     qrScannerCamera: {
       flex: 1,
     },
+    qrScannerFallback: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 24,
+    },
+    qrScannerFallbackText: {
+      color: "white",
+      fontSize: 16,
+      textAlign: "center",
+    },
     qrScannerFooter: {
       position: "absolute",
       bottom: 24,
@@ -1236,5 +1310,6 @@ const makeStyles = (colors: ThemeColors, textScale: number) =>
       right: 0,
       flexDirection: "row",
       justifyContent: "center",
+      zIndex: 2,
     },
   });

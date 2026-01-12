@@ -37,6 +37,7 @@
   "myLists.removed_from_server": "أزيلت من الخادم",
   "myLists.removed_from_server_msg": "هذه القائمة لم تعد موجودة على الخادم. يمكنك عرض البيانات المحلية لكنها لن تتم مزامنتها.",
   "myLists.import_dialog_title": "الصق رابط القائمة",
+  "myLists.camera_permission_denied": "Camera permission is required to scan QR codes.",
   "myLists.import_dialog_helper": "الصق رابطًا مثل:\nhttps://sharedlist.ovh/l/<id>#<key>",
   "myLists.import_dialog_placeholder": "https://sharedlist.ovh/l/...",
   "myLists.import_dialog_import": "استيراد",

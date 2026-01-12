@@ -37,6 +37,7 @@
   "myLists.removed_from_server": "Αφαιρέθηκε από τον server",
   "myLists.removed_from_server_msg": "Αυτή η λίστα δεν υπάρχει πλέον στον server. Μπορείτε να δείτε τα τοπικά δεδομένα, αλλά δεν θα συγχρονίζεται.",
   "myLists.import_dialog_title": "Επικολλήστε τον σύνδεσμο της λίστας",
+  "myLists.camera_permission_denied": "Camera permission is required to scan QR codes.",
   "myLists.import_dialog_helper": "Επικολλήστε έναν σύνδεσμο όπως:\nhttps://sharedlist.ovh/l/<id>#<key>",
   "myLists.import_dialog_placeholder": "https://sharedlist.ovh/l/...",
   "myLists.import_dialog_import": "Εισαγωγή",

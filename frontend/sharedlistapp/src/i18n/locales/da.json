@@ -37,6 +37,7 @@
   "myLists.removed_from_server": "Fjernet fra serveren",
   "myLists.removed_from_server_msg": "Denne liste findes ikke længere på serveren. Du kan stadig se lokale data, men den synkroniseres ikke længere.",
   "myLists.import_dialog_title": "Indsæt liste-link",
+  "myLists.camera_permission_denied": "Camera permission is required to scan QR codes.",
   "myLists.import_dialog_helper": "Indsæt et link som:\nhttps://sharedlist.ovh/l/<id>#<key>",
   "myLists.import_dialog_placeholder": "https://sharedlist.ovh/l/...",
   "myLists.import_dialog_import": "Importer",

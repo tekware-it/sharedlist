@@ -37,6 +37,7 @@
   "myLists.removed_from_server": "已从服务器移除",
   "myLists.removed_from_server_msg": "该清单已不在服务器上。你仍可查看本地保存的数据，但不会再同步。",
   "myLists.import_dialog_title": "粘贴清单链接",
+  "myLists.camera_permission_denied": "Camera permission is required to scan QR codes.",
   "myLists.import_dialog_helper": "粘贴类似链接：\nhttps://sharedlist.ovh/l/<id>#<key>",
   "myLists.import_dialog_placeholder": "https://sharedlist.ovh/l/...",
   "myLists.import_dialog_import": "导入",

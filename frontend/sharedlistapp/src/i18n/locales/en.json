@@ -37,6 +37,7 @@
   "myLists.removed_from_server": "Removed from server",
   "myLists.removed_from_server_msg": "This list no longer exists on the server. You can still view locally saved data, but it won't sync anymore.",
   "myLists.import_dialog_title": "Paste the list link",
+  "myLists.camera_permission_denied": "Camera permission is required to scan QR codes.",
   "myLists.import_dialog_helper": "Paste a link like:\nhttps://sharedlist.ovh/l/<id>#<key>",
   "myLists.import_dialog_placeholder": "https://sharedlist.ovh/l/...",
   "myLists.import_dialog_import": "Import",
