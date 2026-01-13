@@ -1,4 +1,4 @@
-package com.sharedlistapp
+package info.tekware.sharedlist
 
 import android.app.Application
 import com.facebook.react.PackageList

@@ -78,9 +78,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.sharedlistapp"
+    namespace "info.tekware.sharedlist"
     defaultConfig {
-        applicationId "com.sharedlistapp"
+        applicationId "info.tekware.sharedlist"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 10001
