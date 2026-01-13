@@ -1,3 +1,7 @@
+## v1.0.2 - 2026-01-12
+
+- fix: Refactor Android package name
+
 ## v1.0.1 - 2026-01-12
 
 - feat: add QR scanner for importing list links
