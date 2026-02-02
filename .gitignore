@@ -32,6 +32,8 @@ DerivedData/
 # android
 android/.gradle/
 android/local.properties
+**/.gradle/
+**/app/release/
 **/google-services.json
 
 frontend/sharedlistapp/ios/Podfile.lock
