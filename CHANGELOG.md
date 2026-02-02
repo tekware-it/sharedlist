@@ -1,3 +1,7 @@
+## v1.0.3 - 2026-01-12
+
+- fix: update react-native-camera-kit dependency
+
 ## v1.0.2 - 2026-01-12
 
 - fix: Refactor Android package name
